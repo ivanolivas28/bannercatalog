@@ -1,86 +1,69 @@
 import Link from "next/link";
-import Image from "next/image";
 import config from "@/config";
-import logo from "@/app/icon.png";
-
-// Add the Footer to the bottom of your landing page and more.
-// The support link is connected to the config.js file. If there's no config.mailgun.supportEmail, the link won't be displayed.
 
 const Footer = () => {
   return (
-    <footer className="bg-base-200 border-t border-base-content/10">
-      <div className="max-w-7xl mx-auto px-8 py-24">
-        <div className=" flex lg:items-start md:flex-row md:flex-nowrap flex-wrap flex-col">
-          <div className="w-64 flex-shrink-0 md:mx-0 mx-auto text-center md:text-left">
-            <Link
-              href="/#"
-              aria-current="page"
-              className="flex gap-2 justify-center md:justify-start items-center"
-            >
-              <Image
-                src={logo}
-                alt={`${config.appName} logo`}
-                priority={true}
-                className="w-6 h-6"
-                width={24}
-                height={24}
-              />
-              <strong className="font-extrabold tracking-tight text-base md:text-lg">
-                {config.appName}
-              </strong>
-            </Link>
+    <footer className="bg-neutral text-neutral-content">
+      <div className="max-w-6xl mx-auto px-6 pt-12 pb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pb-10 border-b border-white/10">
 
-            <p className="mt-3 text-sm text-base-content/80">
-              {config.appDescription}
-            </p>
-            <p className="mt-3 text-sm text-base-content/60">
-              Copyright © {new Date().getFullYear()} - All rights reserved
+          {/* Brand */}
+          <div>
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                ⬡
+              </div>
+              <span className="font-bold text-white">{config.appName}</span>
+            </div>
+            <p className="text-sm text-neutral-content/50 leading-relaxed max-w-xs">
+              Distribuidor especializado en componentes de automatización industrial.
+              Stock disponible en México, cotización inmediata y envío a todo el país.
             </p>
           </div>
-          <div className="flex-grow flex flex-wrap justify-center -mb-10 md:mt-0 mt-10 text-center">
-            <div className="lg:w-1/3 md:w-1/2 w-full px-4">
-              <div className="footer-title font-semibold text-base-content tracking-widest text-sm md:text-left mb-3">
-                LINKS
-              </div>
 
-              <div className="flex flex-col justify-center items-center md:items-start gap-2 mb-10 text-sm">
-                {config.mailgun.supportEmail && (
-                  <a
-                    href={`mailto:${config.mailgun.supportEmail}`}
-                    target="_blank"
-                    className="link link-hover"
-                    aria-label="Contact Support"
-                  >
-                    Support
-                  </a>
-                )}
-                <Link href="/#pricing" className="link link-hover">
-                  Pricing
-                </Link>
-                <Link href="/blog" className="link link-hover">
-                  Blog
-                </Link>
-                <a href="/#" target="_blank" className="link link-hover">
-                  Affiliates
-                </a>
-              </div>
-            </div>
-
-            <div className="lg:w-1/3 md:w-1/2 w-full px-4">
-              <div className="footer-title font-semibold text-base-content tracking-widest text-sm md:text-left mb-3">
-                LEGAL
-              </div>
-
-              <div className="flex flex-col justify-center items-center md:items-start gap-2 mb-10 text-sm">
-                <Link href="/tos" className="link link-hover">
-                  Terms of services
-                </Link>
-                <Link href="/privacy-policy" className="link link-hover">
-                  Privacy policy
-                </Link>
-              </div>
+          {/* Marcas */}
+          <div>
+            <h4 className="text-xs font-bold tracking-[1.5px] uppercase text-white/80 mb-4">
+              Marcas
+            </h4>
+            <div className="flex flex-col gap-2 text-sm text-neutral-content/50">
+              <Link href="/#catalogo" className="hover:text-white transition-colors">Banner Engineering</Link>
+              <Link href="/#catalogo" className="hover:text-white transition-colors">Schneider Electric</Link>
+              <Link href="/#catalogo" className="hover:text-white transition-colors">Turck</Link>
+              <Link href="/#catalogo" className="hover:text-white transition-colors">Wago</Link>
             </div>
           </div>
+
+          {/* Contacto */}
+          <div>
+            <h4 className="text-xs font-bold tracking-[1.5px] uppercase text-white/80 mb-4">
+              Contacto
+            </h4>
+            <div className="flex flex-col gap-2.5 text-sm text-neutral-content/50">
+              <a href="tel:+526141234567" className="flex items-center gap-2 hover:text-white transition-colors">
+                <i className="ti ti-phone text-base opacity-60" /> +52 614 XXX XXXX
+              </a>
+              <a href="mailto:ventas@TU-DOMINIO.com" className="flex items-center gap-2 hover:text-white transition-colors">
+                <i className="ti ti-mail text-base opacity-60" /> ventas@TU-DOMINIO.com
+              </a>
+              <span className="flex items-center gap-2">
+                <i className="ti ti-map-pin text-base opacity-60" /> Chihuahua, Chih. México
+              </span>
+              <a
+                href={`https://wa.me/5261400000000`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 hover:text-white transition-colors"
+              >
+                <i className="ti ti-brand-whatsapp text-base opacity-60" /> WhatsApp directo
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-xs text-neutral-content/25">
+          <span>© {new Date().getFullYear()} {config.appName} · Chihuahua, México · Todos los derechos reservados.</span>
+          <span>Banner Engineering · Schneider Electric · Turck · Wago</span>
         </div>
       </div>
     </footer>

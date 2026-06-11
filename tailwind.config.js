@@ -3,11 +3,18 @@ module.exports = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./styles/globals.css",
   ],
   theme: {
     extend: {
+      screens: {
+        "3xl": "1920px",
+      },
+      fontFamily: {
+        mono: ["var(--font-mono)", "monospace"],
+      },
       backgroundImage: {
+        "hero-gradient":
+          "linear-gradient(135deg, #071318 0%, #0f2028 55%, #152f40 100%)",
         gradient:
           "linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82)",
       },
@@ -17,32 +24,20 @@ module.exports = {
         wiggle: "wiggle 1.5s ease-in-out infinite",
         popup: "popup 0.25s ease-in-out",
         shimmer: "shimmer 3s ease-out infinite alternate",
+        pulse: "pulse 2s ease-in-out infinite",
       },
       keyframes: {
-        opacity: {
-          "0%": { opacity: 0 },
-          "100%": { opacity: 1 },
-        },
+        opacity: { "0%": { opacity: 0 }, "100%": { opacity: 1 } },
         appearFromRight: {
-          "0%": { opacity: 0.3, transform: "translate(15%, 0px);" },
-          "100%": { opacity: 1, transform: "translate(0);" },
+          "0%": { opacity: 0.3, transform: "translate(15%, 0px)" },
+          "100%": { opacity: 1, transform: "translate(0)" },
         },
         wiggle: {
-          "0%, 20%, 80%, 100%": {
-            transform: "rotate(0deg)",
-          },
-          "30%, 60%": {
-            transform: "rotate(-2deg)",
-          },
-          "40%, 70%": {
-            transform: "rotate(2deg)",
-          },
-          "45%": {
-            transform: "rotate(-4deg)",
-          },
-          "55%": {
-            transform: "rotate(4deg)",
-          },
+          "0%, 20%, 80%, 100%": { transform: "rotate(0deg)" },
+          "30%, 60%": { transform: "rotate(-2deg)" },
+          "40%, 70%": { transform: "rotate(2deg)" },
+          "45%": { transform: "rotate(-4deg)" },
+          "55%": { transform: "rotate(4deg)" },
         },
         popup: {
           "0%": { transform: "scale(0.8)", opacity: 0.8 },
@@ -54,15 +49,39 @@ module.exports = {
           "50%": { backgroundPosition: "100% 50%" },
           "100%": { backgroundPosition: "0% 50%" },
         },
+        pulse: {
+          "0%, 100%": { opacity: 1 },
+          "50%": { opacity: 0.35 },
+        },
       },
     },
   },
   plugins: [require("daisyui")],
   daisyui: {
-    // Light & dark themes are added by default (it switches automatically based on OS settings)
-    // You can add another theme among the list of 30+
-    // Add "data-theme='theme_name" to any HTML tag to enable the 'theme_name' theme.
-    // https://daisyui.com/
-    themes: ["light", "dark"],
+    themes: [
+      {
+        mvpindustrial: {
+          primary: "#1c84be",
+          "primary-content": "#ffffff",
+          secondary: "#0f2028",
+          "secondary-content": "#ffffff",
+          accent: "#1c84be",
+          neutral: "#0f2028",
+          "neutral-content": "#d0d8e0",
+          "base-100": "#ffffff",
+          "base-200": "#F4F4F2",
+          "base-300": "#EAEAE8",
+          "base-content": "#1d1e22",
+          info: "#3abff8",
+          success: "#026121",
+          "success-content": "#ffffff",
+          warning: "#D98F00",
+          "warning-content": "#ffffff",
+          error: "#CC0000",
+          "error-content": "#ffffff",
+        },
+      },
+      "dark",
+    ],
   },
 };
