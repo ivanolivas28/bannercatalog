@@ -206,6 +206,24 @@ function AlertCard({ alert, onAcknowledge }) {
     return colors[status] || 'text-gray-600';
   };
 
+  const getStatusIcon = (status) => {
+    const icons = {
+      'active': '🔴',
+      'acknowledged': '🟡',
+      'escalation': '🟠',
+      'resolved': '🟢',
+      'unassigned': '⚪'
+    };
+    return icons[status] || '⚪';
+  };
+
+  const formatTimeAgo = (minutes) => {
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours}h ${mins}m`;
+  };
+
   return (
     <div className={`border rounded-lg p-4 transition-all hover:shadow-md ${getPriorityColor(alert.priority)}`}>
       <div className="flex items-start justify-between">

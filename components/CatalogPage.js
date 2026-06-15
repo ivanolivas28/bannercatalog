@@ -250,7 +250,7 @@ function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onClo
               {hayPreciosPendientes && (
                 <div className="flex items-start gap-2 bg-warning/10 border border-warning/20 rounded-lg px-3 py-2 text-xs text-base-content/60">
                   <i className="ti ti-info-circle text-warning mt-0.5 flex-shrink-0" />
-                  Algunos productos no tienen precio. Se exportarán como "Cotizar".
+                  Algunos productos no tienen precio. Se exportarán como &ldquo;Cotizar&rdquo;.
                 </div>
               )}
 
