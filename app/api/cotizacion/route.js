@@ -141,6 +141,19 @@ export async function POST(req) {
       console.log("─".repeat(60));
     }
 
+    // -----------------------------------------------------------------------
+    // Odoo integration — non-blocking, never fails the main request
+    // -----------------------------------------------------------------------
+    if (process.env.ODOO_URL && process.env.ODOO_DB) {
+      try {
+        const { createOdooQuotation } = await import("@/libs/odoo");
+        const result = await createOdooQuotation({ contacto, items });
+        console.log(`[Odoo] Presupuesto creado: ${result.name} (ID: ${result.id})`);
+      } catch (odooErr) {
+        console.error("[Odoo] Error al crear cotización:", odooErr.message);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("[/api/cotizacion]", err);
