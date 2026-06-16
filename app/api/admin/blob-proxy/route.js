@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { head } from "@vercel/blob";
+import { list } from "@vercel/blob";
 import * as XLSX from "xlsx";
 
 const ALLOWED = [
@@ -19,11 +19,21 @@ export async function GET(req) {
   }
 
   try {
-    // Get the blob metadata (includes downloadUrl) using head()
-    const metadata = await head(`catalog/${file}`);
+    // List blobs with prefix to get a fresh signed URL
+    const { blobs } = await list({ prefix: `catalog/${file}` });
+    const blob = blobs.find((b) => b.pathname === `catalog/${file}`);
 
-    // Fetch the actual content using the signed downloadUrl
-    const res = await fetch(metadata.downloadUrl);
+    if (!blob) {
+      return new NextResponse(`File not found: catalog/${file}`, { status: 404 });
+    }
+
+    // Fetch using the token in the Authorization header
+    const res = await fetch(blob.url, {
+      headers: {
+        Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+      },
+    });
+
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
     if (file.endsWith(".xlsx") || file.endsWith(".xls")) {
