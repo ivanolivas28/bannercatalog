@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { download } from "@vercel/blob";
+import { head } from "@vercel/blob";
 import * as XLSX from "xlsx";
 
 const ALLOWED = [
@@ -19,11 +19,15 @@ export async function GET(req) {
   }
 
   try {
-    const blob = await download(`catalog/${file}`);
+    // Get the blob metadata (includes downloadUrl) using head()
+    const metadata = await head(`catalog/${file}`);
 
-    // If xlsx, convert to CSV text
+    // Fetch the actual content using the signed downloadUrl
+    const res = await fetch(metadata.downloadUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     if (file.endsWith(".xlsx") || file.endsWith(".xls")) {
-      const arrayBuffer = await blob.arrayBuffer();
+      const arrayBuffer = await res.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: "array" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const csv = XLSX.utils.sheet_to_csv(sheet);
@@ -32,7 +36,7 @@ export async function GET(req) {
       });
     }
 
-    const text = await blob.text();
+    const text = await res.text();
     return new NextResponse(text, {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
