@@ -328,8 +328,8 @@ export async function cargarCatalogo() {
     resolveUrl("mx.csv",      CATALOG_CONFIG.SHEET_MX,      CATALOG_CONFIG.LOCAL_MX),
     resolveUrl("usa.csv",     CATALOG_CONFIG.SHEET_USA,      CATALOG_CONFIG.LOCAL_USA),
     resolveUrl("chn.csv",     CATALOG_CONFIG.SHEET_CHN,      CATALOG_CONFIG.LOCAL_CHN),
-    resolveUrl("banner.csv",  CATALOG_CONFIG.SHEET_BANNER,   CATALOG_CONFIG.LOCAL_BANNER),
-    resolveUrl("sourcing.csv",CATALOG_CONFIG.SHEET_SOURCING, CATALOG_CONFIG.LOCAL_SOURCING),
+    resolveUrl("banner.xlsx", CATALOG_CONFIG.SHEET_BANNER,   CATALOG_CONFIG.LOCAL_BANNER),
+    resolveUrl("sourcing.xlsx",CATALOG_CONFIG.SHEET_SOURCING, CATALOG_CONFIG.LOCAL_SOURCING),
   ]);
 
   const [dataMX, dataUSA, dataCHN, dataBanner, dataSourcing] =
