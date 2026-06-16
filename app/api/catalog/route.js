@@ -53,9 +53,29 @@ async function cargarRemoto() {
 export async function GET() {
   try {
     const isLocal = process.env.NODE_ENV === "development";
-    const [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = isLocal
-      ? await cargarLocal()
-      : await cargarRemoto();
+    const tieneBlob = !!process.env.BLOB_READ_WRITE_TOKEN;
+    const base = process.env.NEXTAUTH_URL || "https://tienda.eqkor.mx";
+
+    const fetchText = (url) =>
+      fetch(url, { next: { revalidate: 1800 } }).then((r) => r.ok ? r.text() : "");
+
+    const blobUrl = (file) => `${base}/api/admin/blob-proxy?file=${file}`;
+
+    let mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt;
+
+    if (isLocal) {
+      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await cargarLocal().then(r => r);
+    } else if (tieneBlob) {
+      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await Promise.all([
+        fetchText(blobUrl("mx.csv")),
+        fetchText(blobUrl("usa.csv")),
+        fetchText(blobUrl("chn.csv")),
+        fetchText(blobUrl("banner.xlsx")),
+        fetchText(blobUrl("sourcing.xlsx")),
+      ]);
+    } else {
+      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await cargarRemoto().then(r => r);
+    }
 
     const mx       = mxTxt       ? parsearSheet(mxTxt, "MX")             : [];
     const usa      = usaTxt      ? parsearSheet(usaTxt, "USA")            : [];
