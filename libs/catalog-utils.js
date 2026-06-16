@@ -319,7 +319,10 @@ export async function cargarCatalogo() {
 
   // If Blob token is present, resolve signed URLs via internal API
   async function resolveUrl(pathname, sheetUrl, localUrl) {
-    if (tieneBlob) return `/api/admin/blob-proxy?file=${pathname}`;
+    if (tieneBlob) {
+      const base = process.env.NEXTAUTH_URL || "https://tienda.eqkor.mx";
+      return `${base}/api/admin/blob-proxy?file=${pathname}`;
+    }
     if (esLocal) return localUrl;
     return sheetUrl;
   }
