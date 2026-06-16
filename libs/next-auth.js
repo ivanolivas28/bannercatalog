@@ -1,11 +1,8 @@
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import config from "@/config";
 import connectMongo from "@/libs/mongoose";
 import Customer from "@/models/Customer";
-
-// MongoDB adapter is disabled until Atlas cluster is reachable.
-// To re-enable: import MongoDBAdapter + EmailProvider, import connectMongo,
-// and add them back below. Requires a valid MONGODB_URI in .env.local.
 
 export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -23,11 +20,48 @@ export const authOptions = {
         };
       },
     }),
+
+    CredentialsProvider({
+      id: "magic-token",
+      name: "Magic Token",
+      credentials: {
+        token: { label: "Token", type: "text" },
+      },
+      async authorize(credentials) {
+        const { token } = credentials || {};
+        if (!token) return null;
+
+        try {
+          await connectMongo();
+
+          const customer = await Customer.findOne({
+            loginToken: token,
+            loginTokenExpiry: { $gt: new Date() },
+            status: "approved",
+          });
+
+          if (!customer) return null;
+
+          // Single-use: clear token after successful login
+          customer.loginToken = null;
+          customer.loginTokenExpiry = null;
+          await customer.save();
+
+          return {
+            id: customer._id.toString(),
+            name: `${customer.nombre} ${customer.apellido}`,
+            email: customer.email,
+          };
+        } catch (e) {
+          console.error("[next-auth] magic-token authorize error:", e.message);
+          return null;
+        }
+      },
+    }),
   ],
 
   callbacks: {
     jwt: async ({ token, trigger }) => {
-      // Re-check approval status on sign in or session update
       if (token?.email) {
         const adminEmails = (process.env.ADMIN_EMAILS || "")
           .split(",")
@@ -56,7 +90,6 @@ export const authOptions = {
               token.customer = null;
             }
           } catch (e) {
-            // If DB is unreachable, don't block auth — just mark as not approved
             console.error("[next-auth] Could not check customer status:", e.message);
             token.isApproved = false;
           }
@@ -78,9 +111,15 @@ export const authOptions = {
       return session;
     },
   },
+
+  pages: {
+    signIn: "/signin",
+  },
+
   session: {
     strategy: "jwt",
   },
+
   theme: {
     brandColor: config.colors.main,
     logo: `https://${config.domainName}/logoAndName.png`,

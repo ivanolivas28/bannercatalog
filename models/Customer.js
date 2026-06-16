@@ -45,6 +45,14 @@ const customerSchema = mongoose.Schema(
       type: String,
       trim: true,
     },
+    loginToken: {
+      type: String,
+      default: null,
+    },
+    loginTokenExpiry: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/next-auth";
+import connectMongo from "@/libs/mongoose";
+import Cotizacion from "@/models/Cotizacion";
 import config from "@/config";
 
 function fmtUSD(n) {
@@ -52,7 +56,7 @@ function buildEmailHTML({ contacto, items }) {
 
     <!-- Header -->
     <div style="background:#0f2028;color:#fff;padding:24px 28px;">
-      <h1 style="margin:0;font-size:20px;">🛒 Nueva solicitud de cotización</h1>
+      <h1 style="margin:0;font-size:20px;">Nueva solicitud de cotización</h1>
       <p style="margin:6px 0 0;opacity:.7;font-size:13px;">${new Date().toLocaleString("es-MX", { dateStyle: "full", timeStyle: "short" })}</p>
     </div>
 
@@ -65,7 +69,7 @@ function buildEmailHTML({ contacto, items }) {
         <tr><td style="padding:3px 16px 3px 0;color:#666;">Empresa</td>
             <td style="padding:3px 0;font-weight:bold;">${contacto.empresa}</td></tr>
         <tr><td style="padding:3px 16px 3px 0;color:#666;">Correo</td>
-            <td style="padding:3px 0;"><a href="mailto:${contacto.email}" style="color:#1c84be;">${contacto.email}</a></td></tr>
+            <td style="padding:3px 0;"><a href="mailto:${contacto.email}" style="color:#1c84be;">${contacto.email || "—"}</a></td></tr>
         <tr><td style="padding:3px 16px 3px 0;color:#666;">Tel/WhatsApp</td>
             <td style="padding:3px 0;"><a href="https://wa.me/${(contacto.telefono||"").replace(/\D/g,"")}" style="color:#1c84be;">${contacto.telefono || "—"}</a></td></tr>
       </table>
@@ -107,22 +111,55 @@ export async function POST(req) {
     const body = await req.json();
     const { items, contacto } = body;
 
-    // Validate
+    // Validate items
     if (!items?.length) {
       return NextResponse.json({ error: "Sin productos en la cotización." }, { status: 400 });
     }
+
     const { nombre, apellido, empresa, email, telefono } = contacto || {};
-    if (!nombre || !apellido || !empresa || !email || !telefono) {
-      return NextResponse.json({ error: "Completa todos los campos de contacto." }, { status: 400 });
+    if (!nombre || !apellido || !empresa) {
+      return NextResponse.json({ error: "Completa los campos de nombre, apellido y empresa." }, { status: 400 });
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email && !telefono) {
+      return NextResponse.json({ error: "Proporciona al menos un correo o teléfono de contacto." }, { status: 400 });
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ error: "Correo electrónico inválido." }, { status: 400 });
     }
 
-    const subject = `🛒 Solicitud de cotización — ${nombre} ${apellido} · ${empresa}`;
+    // Check if user is logged in
+    const session = await getServerSession(authOptions);
+    const isLoggedIn = !!session?.user?.isApproved && !session?.user?.isAdmin;
+
+    // Save to MongoDB
+    await connectMongo();
+
+    const cotizacionData = {
+      items: items.map((i) => ({
+        pn: i.pn,
+        desc: i.desc || "",
+        qty: Number(i.qty) || 1,
+        precioUSD: Number(i.precioUSD) || 0,
+        marca: i.marca || "",
+      })),
+      customerName: `${nombre} ${apellido}`.trim(),
+      customerEmail: email || null,
+      customerWhatsapp: telefono || null,
+      customerEmpresa: empresa,
+      source: isLoggedIn ? "web_loggedin" : "web_guest",
+    };
+
+    // Link to customer record if logged in
+    if (isLoggedIn && session.user.customer?.id) {
+      cotizacionData.customerId = session.user.customer.id;
+    }
+
+    await Cotizacion.create(cotizacionData);
+
+    const subject = `Solicitud de cotización — ${nombre} ${apellido} · ${empresa}`;
     const html    = buildEmailHTML({ contacto, items });
 
-    // Try to send via Mailgun
+    // Send via Mailgun
     if (process.env.MAILGUN_API_KEY) {
       const { sendEmail } = await import("@/libs/mailgun");
       await sendEmail({
@@ -132,26 +169,12 @@ export async function POST(req) {
         replyTo: email,
       });
     } else {
-      // No email service configured — log for development
-      console.log("\n📧 [COTIZACIÓN — EMAIL NO CONFIGURADO]");
+      console.log("\n[COTIZACION — EMAIL NO CONFIGURADO]");
       console.log("Para:", config.mailgun.supportEmail);
       console.log("Asunto:", subject);
       console.log("Cliente:", nombre, apellido, "|", empresa, "|", email);
-      console.log("Productos:", items.map((i) => `${i.qty}× ${i.pn}`).join(", "));
+      console.log("Productos:", items.map((i) => `${i.qty}x ${i.pn}`).join(", "));
       console.log("─".repeat(60));
-    }
-
-    // -----------------------------------------------------------------------
-    // Odoo integration — non-blocking, never fails the main request
-    // -----------------------------------------------------------------------
-    if (process.env.ODOO_URL && process.env.ODOO_DB) {
-      try {
-        const { createOdooQuotation } = await import("@/libs/odoo");
-        const result = await createOdooQuotation({ contacto, items });
-        console.log(`[Odoo] Presupuesto creado: ${result.name} (ID: ${result.id})`);
-      } catch (odooErr) {
-        console.error("[Odoo] Error al crear cotización:", odooErr.message);
-      }
     }
 
     return NextResponse.json({ success: true });

@@ -59,6 +59,7 @@ function CustomerTable({ customers }) {
                 <CustomerActions
                   customerId={c.id}
                   currentStatus={c.status}
+                  nombre={c.nombre}
                 />
               </td>
             </tr>

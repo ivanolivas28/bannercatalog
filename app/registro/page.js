@@ -2,6 +2,29 @@
 
 import { useState } from "react";
 
+const FREE_EMAIL_DOMAINS = [
+  "gmail.com",
+  "hotmail.com",
+  "hotmail.es",
+  "yahoo.com",
+  "yahoo.com.mx",
+  "outlook.com",
+  "outlook.es",
+  "live.com",
+  "live.com.mx",
+  "icloud.com",
+  "me.com",
+  "aol.com",
+  "protonmail.com",
+  "mail.com",
+];
+
+function isFreeEmail(email) {
+  if (!email) return false;
+  const domain = email.split("@")[1]?.toLowerCase();
+  return FREE_EMAIL_DOMAINS.includes(domain);
+}
+
 export default function RegistroPage() {
   const [form, setForm] = useState({
     nombre: "",
@@ -16,18 +39,51 @@ export default function RegistroPage() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    if (error) setError("");
+  };
+
+  const validate = () => {
+    if (!form.nombre.trim() || !form.apellido.trim() || !form.empresa.trim()) {
+      return "Nombre, apellido y empresa son obligatorios.";
+    }
+    if (!form.email.trim() && !form.whatsapp.trim()) {
+      return "Proporciona al menos un correo corporativo o número de WhatsApp.";
+    }
+    if (form.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.email.trim())) {
+        return "El formato del correo no es válido.";
+      }
+      if (isFreeEmail(form.email.trim())) {
+        return "Usa tu correo corporativo. No se aceptan correos de Gmail, Hotmail, Yahoo, Outlook ni similares.";
+      }
+    }
+    return null;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch("/api/registro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          nombre: form.nombre.trim(),
+          apellido: form.apellido.trim(),
+          empresa: form.empresa.trim(),
+          email: form.email.trim() || undefined,
+          whatsapp: form.whatsapp.trim() || undefined,
+        }),
       });
 
       const data = await res.json();
@@ -72,7 +128,7 @@ export default function RegistroPage() {
             ¡Solicitud enviada!
           </h2>
           <p className="text-slate-300 leading-relaxed">
-            Tu solicitud está en revisión. Te avisaremos pronto por correo.
+            Tu solicitud está en revisión. Te avisaremos pronto.
           </p>
         </div>
       </main>
@@ -105,7 +161,7 @@ export default function RegistroPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                  Nombre
+                  Nombre <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -120,7 +176,7 @@ export default function RegistroPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-1">
-                  Apellido
+                  Apellido <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"
@@ -137,7 +193,7 @@ export default function RegistroPage() {
 
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Empresa
+                Empresa <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -151,36 +207,64 @@ export default function RegistroPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                Correo corporativo
-              </label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                required
-                placeholder="juan@empresa.com"
-                className="w-full rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{ backgroundColor: "#0f2028", border: "1px solid #1e3a4a" }}
-              />
-            </div>
+            {/* Contact section — at least one required */}
+            <div
+              className="rounded-xl p-4 space-y-4"
+              style={{ backgroundColor: "#0f2028", border: "1px solid #1e3a4a" }}
+            >
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Contacto — proporciona al menos uno
+              </p>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">
-                WhatsApp
-              </label>
-              <input
-                type="tel"
-                name="whatsapp"
-                value={form.whatsapp}
-                onChange={handleChange}
-                required
-                placeholder="+52 55 1234 5678"
-                className="w-full rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{ backgroundColor: "#0f2028", border: "1px solid #1e3a4a" }}
-              />
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  Correo corporativo{" "}
+                  <span className="text-slate-500 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="juan@empresa.com"
+                  className="w-full rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    backgroundColor: "#162535",
+                    border: "1px solid #2a4a5a",
+                  }}
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  No se aceptan correos de Gmail, Hotmail, Yahoo ni Outlook.
+                </p>
+              </div>
+
+              {/* Separator */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-slate-700" />
+                <span className="text-slate-400 text-sm font-semibold">O</span>
+                <div className="flex-1 h-px bg-slate-700" />
+              </div>
+
+              {/* WhatsApp */}
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1">
+                  WhatsApp{" "}
+                  <span className="text-slate-500 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="tel"
+                  name="whatsapp"
+                  value={form.whatsapp}
+                  onChange={handleChange}
+                  placeholder="+52 55 1234 5678"
+                  className="w-full rounded-lg px-4 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    backgroundColor: "#162535",
+                    border: "1px solid #2a4a5a",
+                  }}
+                />
+              </div>
             </div>
 
             {error && (
@@ -227,7 +311,7 @@ export default function RegistroPage() {
 
         <p className="text-center text-xs text-slate-500 mt-6">
           ¿Ya tienes acceso?{" "}
-          <a href="/api/auth/signin" className="text-blue-400 hover:underline">
+          <a href="/signin" className="text-blue-400 hover:underline">
             Inicia sesión
           </a>
         </p>
