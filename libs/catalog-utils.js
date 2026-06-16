@@ -309,27 +309,28 @@ export function filtrarProductos(productos, { busqueda, filtroActivo, filtroCate
 
 export async function cargarCatalogo() {
   const esLocal = process.env.NODE_ENV === "development";
-
-  // Priority: Vercel Blob (uploaded via /admin/upload) > Google Sheets > local dev files
-  function resolveUrl(blobEnv, sheetUrl, localUrl) {
-    if (process.env[blobEnv]) return process.env[blobEnv];
-    if (esLocal) return localUrl;
-    return sheetUrl;
-  }
-
-  const urls = [
-    resolveUrl("BLOB_MX",      CATALOG_CONFIG.SHEET_MX,      CATALOG_CONFIG.LOCAL_MX),
-    resolveUrl("BLOB_USA",     CATALOG_CONFIG.SHEET_USA,      CATALOG_CONFIG.LOCAL_USA),
-    resolveUrl("BLOB_CHN",     CATALOG_CONFIG.SHEET_CHN,      CATALOG_CONFIG.LOCAL_CHN),
-    resolveUrl("BLOB_BANNER",  CATALOG_CONFIG.SHEET_BANNER,   CATALOG_CONFIG.LOCAL_BANNER),
-    resolveUrl("BLOB_SOURCING",CATALOG_CONFIG.SHEET_SOURCING, CATALOG_CONFIG.LOCAL_SOURCING),
-  ];
+  const tieneBlob = !!process.env.BLOB_READ_WRITE_TOKEN;
 
   const fetchText = async (url) => {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.text();
   };
+
+  // If Blob token is present, resolve signed URLs via internal API
+  async function resolveUrl(pathname, sheetUrl, localUrl) {
+    if (tieneBlob) return `/api/admin/blob-proxy?file=${pathname}`;
+    if (esLocal) return localUrl;
+    return sheetUrl;
+  }
+
+  const urls = await Promise.all([
+    resolveUrl("mx.csv",      CATALOG_CONFIG.SHEET_MX,      CATALOG_CONFIG.LOCAL_MX),
+    resolveUrl("usa.csv",     CATALOG_CONFIG.SHEET_USA,      CATALOG_CONFIG.LOCAL_USA),
+    resolveUrl("chn.csv",     CATALOG_CONFIG.SHEET_CHN,      CATALOG_CONFIG.LOCAL_CHN),
+    resolveUrl("banner.csv",  CATALOG_CONFIG.SHEET_BANNER,   CATALOG_CONFIG.LOCAL_BANNER),
+    resolveUrl("sourcing.csv",CATALOG_CONFIG.SHEET_SOURCING, CATALOG_CONFIG.LOCAL_SOURCING),
+  ]);
 
   const [dataMX, dataUSA, dataCHN, dataBanner, dataSourcing] =
     await Promise.allSettled(urls.map(fetchText));
