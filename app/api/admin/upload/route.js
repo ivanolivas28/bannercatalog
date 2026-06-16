@@ -31,7 +31,7 @@ export async function POST(req) {
 
   try {
     const blob = await put(pathname, file, {
-      access: "public",
+      access: "private",
       allowOverwrite: true,
     });
 
