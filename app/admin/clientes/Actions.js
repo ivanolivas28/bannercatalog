@@ -25,13 +25,12 @@ export default function CustomerActions({ customerId, currentStatus, nombre, wha
       if (!res.ok) {
         toast.error(data.error || "Error al actualizar el cliente.");
       } else {
-        if (action === "approve") {
-          toast.success("Cliente aprobado. Comparte el link de acceso.");
+        if (action === "approve" || action === "resend") {
+          toast.success(action === "approve" ? "Cliente aprobado. Comparte el link de acceso." : "Link regenerado. Comparte el nuevo link.");
           setAccessInfo({
             accessUrl: data.accessUrl,
             whatsappUrl: data.whatsappUrl,
           });
-          // Don't refresh yet — wait until admin closes the link panel
         } else {
           toast.success("Cliente rechazado.");
           router.refresh();
@@ -88,6 +87,18 @@ export default function CustomerActions({ customerId, currentStatus, nombre, wha
               <span className="loading loading-spinner loading-xs" />
             ) : null}
             Aprobar
+          </button>
+        )}
+        {currentStatus === "approved" && !accessInfo && (
+          <button
+            onClick={() => handleAction("resend")}
+            disabled={loading !== null}
+            className="btn btn-info btn-sm btn-outline"
+          >
+            {loading === "resend" ? (
+              <span className="loading loading-spinner loading-xs" />
+            ) : null}
+            Reenviar link
           </button>
         )}
         {(currentStatus === "pending" || currentStatus === "approved") && (

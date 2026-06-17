@@ -22,9 +22,9 @@ export async function PATCH(req, { params }) {
     const body = await req.json();
     const { action, notes } = body;
 
-    if (!["approve", "reject"].includes(action)) {
+    if (!["approve", "reject", "resend"].includes(action)) {
       return NextResponse.json(
-        { error: "Acción no válida. Usa 'approve' o 'reject'." },
+        { error: "Acción no válida." },
         { status: 400 }
       );
     }
@@ -39,11 +39,12 @@ export async function PATCH(req, { params }) {
       );
     }
 
-    if (action === "approve") {
-      customer.status = "approved";
-      customer.approvedAt = new Date();
-      customer.rejectedAt = undefined;
-
+    if (action === "approve" || action === "resend") {
+      if (action === "approve") {
+        customer.status = "approved";
+        customer.approvedAt = new Date();
+        customer.rejectedAt = undefined;
+      }
       // Generate long-lived access token (30 days)
       const token = crypto.randomBytes(32).toString("hex");
       customer.loginToken = token;
@@ -65,7 +66,7 @@ export async function PATCH(req, { params }) {
     let accessUrl = null;
     let whatsappUrl = null;
 
-    if (action === "approve") {
+    if (action === "approve" || action === "resend") {
       const baseUrl = process.env.NEXTAUTH_URL || "https://tienda.eqkor.mx";
       accessUrl = `${baseUrl}/acceso?token=${customer.loginToken}`;
 
