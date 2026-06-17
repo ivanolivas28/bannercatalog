@@ -18,8 +18,8 @@ export async function GET() {
   }
 
   try {
-    const session = await odooAuth();
-    return NextResponse.json({ ok: true, uid: session.uid, checks });
+    const { uid } = await odooAuth();
+    return NextResponse.json({ ok: true, uid, checks });
   } catch (err) {
     return NextResponse.json({ ok: false, error: err.message, checks });
   }

@@ -13,101 +13,186 @@
  */
 
 // ---------------------------------------------------------------------------
-// Low-level helpers
+// Low-level helpers — XML-RPC over HTTPS
 // ---------------------------------------------------------------------------
 
-let _session = null; // { uid, sessionId }
+let _uid = null; // cached uid after authenticate
 
-/**
- * Make a raw JSON-RPC call to Odoo.
- * @param {string} path   — URL path, e.g. "/web/dataset/call_kw" or "/web/session/authenticate"
- * @param {object} params — RPC params payload
- */
-async function odooRpc(path, params) {
-  const url = `${process.env.ODOO_URL}${path}`;
+function xmlVal(value) {
+  if (value === false || value === null || value === undefined)
+    return "<value><boolean>0</boolean></value>";
+  if (typeof value === "number" && Number.isInteger(value))
+    return `<value><int>${value}</int></value>`;
+  if (typeof value === "number")
+    return `<value><double>${value}</double></value>`;
+  if (typeof value === "boolean")
+    return `<value><boolean>${value ? 1 : 0}</boolean></value>`;
+  if (typeof value === "string")
+    return `<value><string>${value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</string></value>`;
+  if (Array.isArray(value))
+    return `<value><array><data>${value.map(xmlVal).join("")}</data></array></value>`;
+  if (typeof value === "object") {
+    const members = Object.entries(value)
+      .map(([k, v]) => `<member><name>${k}</name>${xmlVal(v)}</member>`)
+      .join("");
+    return `<value><struct>${members}</struct></value>`;
+  }
+  return `<value><string>${String(value)}</string></value>`;
+}
 
-  const body = JSON.stringify({
-    jsonrpc: "2.0",
-    method: "call",
-    id: Date.now(),
-    params,
-  });
+function xmlRpcBody(method, params) {
+  return `<?xml version="1.0"?><methodCall><methodName>${method}</methodName><params>${
+    params.map((p) => `<param>${xmlVal(p)}</param>`).join("")
+  }</params></methodCall>`;
+}
 
-  const headers = {
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
-
-  // Forward session cookie so authenticated calls work
-  if (_session?.sessionId) {
-    headers["Cookie"] = `session_id=${_session.sessionId}`;
+function parseXmlRpcFull(xml) {
+  // Use DOMParser-like approach via regex for Node.js environment
+  // Extract the methodResponse > params > param > value content
+  function parseValue(str) {
+    str = str.trim();
+    const int = str.match(/^<int>(.*?)<\/int>$/) || str.match(/^<i4>(.*?)<\/i4>$/);
+    if (int) return parseInt(int[1], 10);
+    const dbl = str.match(/^<double>(.*?)<\/double>$/);
+    if (dbl) return parseFloat(dbl[1]);
+    const bool = str.match(/^<boolean>(.*?)<\/boolean>$/);
+    if (bool) return bool[1] === "1";
+    const str2 = str.match(/^<string>([\s\S]*?)<\/string>$/);
+    if (str2) return str2[1].replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">");
+    if (str.startsWith("<array>")) {
+      const data = str.match(/<data>([\s\S]*?)<\/data>/)?.[1] || "";
+      const items = [];
+      const valRe = /<value>([\s\S]*?)<\/value>/g;
+      let m;
+      while ((m = valRe.exec(data)) !== null) items.push(parseValue(m[1].trim()));
+      return items;
+    }
+    if (str.startsWith("<struct>")) {
+      const obj = {};
+      const memberRe = /<member><name>(.*?)<\/name><value>([\s\S]*?)<\/value><\/member>/g;
+      let m;
+      while ((m = memberRe.exec(str)) !== null) obj[m[1]] = parseValue(m[2].trim());
+      return obj;
+    }
+    // bare value (no type tag) = string
+    if (!str.startsWith("<")) return str;
+    return str;
   }
 
-  const res = await fetch(url, { method: "POST", headers, body });
-
-  if (!res.ok) {
-    throw new Error(`Odoo HTTP ${res.status} ${res.statusText} — ${url}`);
-  }
-
-  const json = await res.json();
-
-  if (json.error) {
-    const msg =
-      json.error?.data?.message || json.error?.message || JSON.stringify(json.error);
+  if (xml.includes("<fault>")) {
+    const msg = xml.match(/<name>faultString<\/name>\s*<value><string>([\s\S]*?)<\/string>/)?.[1] || "XML-RPC fault";
     throw new Error(`Odoo RPC error: ${msg}`);
   }
 
+  const valueMatch = xml.match(/<params>\s*<param>\s*<value>([\s\S]*?)<\/value>\s*<\/param>/);
+  if (!valueMatch) return null;
+  return parseValue(valueMatch[1].trim());
+}
+
+function parseXmlRpcResponse(xml) {
+  if (xml.includes("<fault>")) {
+    const msg = xml.match(/<name>faultString<\/name>\s*<value><string>(.*?)<\/string>/s)?.[1] || "XML-RPC fault";
+    throw new Error(`Odoo RPC error: ${msg}`);
+  }
+  // Extract first value — handles int, string, boolean, array, struct
+  const intMatch = xml.match(/<value><int>(.*?)<\/int>/);
+  if (intMatch) return parseInt(intMatch[1], 10);
+  const i4Match = xml.match(/<value><i4>(.*?)<\/i4>/);
+  if (i4Match) return parseInt(i4Match[1], 10);
+  const strMatch = xml.match(/<value><string>([\s\S]*?)<\/string>/);
+  if (strMatch) return strMatch[1];
+  const boolMatch = xml.match(/<value><boolean>(.*?)<\/boolean>/);
+  if (boolMatch) return boolMatch[1] === "1";
+  // For arrays/structs we return the raw XML — callers that need structured data handle it
+  return xml;
+}
+
+async function xmlRpc(endpoint, method, params) {
+  const url = `${process.env.ODOO_URL}${endpoint}`;
+  const body = xmlRpcBody(method, params);
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "text/xml", Accept: "text/xml" },
+    body,
+  });
+
+  if (!res.ok) throw new Error(`Odoo HTTP ${res.status} — ${url}`);
+
+  const text = await res.text();
+  return parseXmlRpcResponse(text);
+}
+
+// For object/execute calls we need a JSON-compatible response — use JSON-RPC only for execute_kw
+async function jsonRpc(path, method, params) {
+  const url = `${process.env.ODOO_URL}${path}`;
+  const body = JSON.stringify({ jsonrpc: "2.0", method: "call", id: Date.now(), params });
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body,
+  });
+  if (!res.ok) throw new Error(`Odoo HTTP ${res.status} — ${url}`);
+  const json = await res.json();
+  if (json.error) {
+    const msg = json.error?.data?.message || json.error?.message || JSON.stringify(json.error);
+    throw new Error(`Odoo RPC error: ${msg}`);
+  }
   return json.result;
 }
 
-/**
- * Make a call_kw JSON-RPC request (authenticated model method call).
- */
 async function callKw({ model, method, args = [], kwargs = {} }) {
-  return odooRpc("/web/dataset/call_kw", {
-    model,
-    method,
-    args,
-    kwargs: {
-      context: { lang: "es_MX", tz: "America/Monterrey" },
-      ...kwargs,
-    },
+  const uid = await ensureAuth();
+  // XML-RPC execute_kw: standard external API for Odoo
+  const result = await fetch(`${process.env.ODOO_URL}/xmlrpc/2/object`, {
+    method: "POST",
+    headers: { "Content-Type": "text/xml", Accept: "text/xml" },
+    body: xmlRpcBody("execute_kw", [
+      process.env.ODOO_DB,
+      uid,
+      process.env.ODOO_PASSWORD,
+      model,
+      method,
+      args,
+      { context: { lang: "es_MX", tz: "America/Monterrey" }, ...kwargs },
+    ]),
   });
+
+  if (!result.ok) throw new Error(`Odoo HTTP ${result.status}`);
+  const text = await result.text();
+
+  if (text.includes("<fault>")) {
+    const msg = text.match(/<name>faultString<\/name>\s*<value><string>([\s\S]*?)<\/string>/)?.[1] || "XML-RPC fault";
+    throw new Error(`Odoo RPC error: ${msg}`);
+  }
+
+  // Parse response — try JSON-like extraction for arrays/structs
+  return parseXmlRpcFull(text);
 }
 
 // ---------------------------------------------------------------------------
 // Authentication
 // ---------------------------------------------------------------------------
 
-/**
- * Authenticate with Odoo and cache the session.
- * Returns { uid, sessionId }
- */
 export async function odooAuth() {
-  const result = await odooRpc("/web/session/authenticate", {
-    db: process.env.ODOO_DB,
-    login: process.env.ODOO_USER,
-    password: process.env.ODOO_PASSWORD,
-  });
+  const uid = await xmlRpc("/xmlrpc/2/common", "authenticate", [
+    process.env.ODOO_DB,
+    process.env.ODOO_USER,
+    process.env.ODOO_PASSWORD,
+    {},
+  ]);
 
-  if (!result?.uid) {
+  if (!uid || uid === false || uid === 0) {
     throw new Error("Odoo authentication failed — check ODOO_USER and ODOO_PASSWORD");
   }
 
-  // The session_id lives in the Set-Cookie header; Odoo also returns it in the result
-  const sessionId = result.session_id || "";
-  _session = { uid: result.uid, sessionId };
-  return _session;
+  _uid = uid;
+  return { uid };
 }
 
-/**
- * Ensure we have a valid session (authenticate if we don't).
- */
 async function ensureAuth() {
-  if (!_session) {
-    await odooAuth();
-  }
-  return _session;
+  if (!_uid) await odooAuth();
+  return _uid;
 }
 
 // ---------------------------------------------------------------------------
