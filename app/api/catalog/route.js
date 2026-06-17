@@ -90,6 +90,9 @@ export async function GET() {
 
     const todos = mergear(mx, usa, banner, nfg, sourcing);
 
+    // Build set of PNs already in catalog
+    const pnsEnCatalogo = new Set(todos.map((p) => p.pn?.toUpperCase()));
+
     // Return only fields the client uses (reduces JSON payload size)
     const productos = todos.map(({
       pn, desc, marca, familia, categoria,
@@ -109,6 +112,35 @@ export async function GET() {
         } : {}),
       };
     });
+
+    // Build Banner lookup map for enriching remate-only products
+    const bannerMap = new Map(banner.map((b) => [b.pn, b]));
+
+    // Add remate-only products (not in main catalog), enriched with Banner pricelist data
+    for (const [pn, oferta] of remate.entries()) {
+      if (!pnsEnCatalogo.has(pn)) {
+        const b = bannerMap.get(pn) || {};
+        productos.push({
+          pn,
+          desc: b.desc || oferta.desc || pn,
+          marca: "BANNER",
+          familia: b.familia || "",
+          categoria: b.categoria || "",
+          precioUSD: oferta.precioOriginal || b.precioUSD || 0,
+          stockMX: oferta.cantidad || 0,
+          stockUSA: 0,
+          stockCHN: 0,
+          leadTimeBanner: b.leadTimeBanner || 0,
+          imagen: b.imagen || null,
+          urlProducto: b.urlProducto || null,
+          sourcingJun: null,
+          esRemate: true,
+          precioRemate: oferta.precioRemate,
+          precioOriginal: oferta.precioOriginal || b.precioUSD || 0,
+          cantidadRemate: oferta.cantidad || 0,
+        });
+      }
+    }
 
     return NextResponse.json(productos, {
       headers: {
