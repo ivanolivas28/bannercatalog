@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/next-auth";
 import { put } from "@vercel/blob";
 
-const ALLOWED_TYPES = ["mx", "usa", "chn", "banner", "sourcing"];
+const ALLOWED_TYPES = ["mx", "usa", "chn", "banner", "sourcing", "remate"];
 const ALLOWED_EXTS  = [".xlsx", ".xls", ".csv", ".txt"];
 
 export async function POST(req) {
