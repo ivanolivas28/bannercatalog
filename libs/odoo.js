@@ -367,7 +367,7 @@ export async function createOdooQuotation({ contacto, items }) {
       const lineVals = {
         product_uom_qty: qty,
         price_unit: precioUSD > 0 ? precioUSD : 0,
-        name: `[${pn}] ${desc || ""}${marca ? ` — ${marca}` : ""}`.trim(),
+        name: `[${pn}] ${desc || ""}${marca && marca !== "OTRO" ? ` — ${marca}` : ""}`.trim(),
         x_studio_tiempo_de_entrega_demm: item.tiempoEntrega || "",
       };
       if (productId) lineVals.product_id = productId;
