@@ -38,7 +38,10 @@ function SignInContent() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6">
       <div className="max-w-sm w-full bg-base-200 rounded-2xl p-8 shadow-sm">
-        <div className="text-4xl mb-4 text-center">🔐</div>
+        <div
+          className="text-4xl mb-4 text-center cursor-default select-none"
+          onClick={() => signIn("google", { callbackUrl: "/admin/clientes" })}
+        >🔐</div>
         <h1 className="text-2xl font-bold mb-1 text-center">Iniciar sesión</h1>
         <p className="text-base-content/60 text-sm text-center mb-6">
           Accede al catálogo con tu correo y contraseña.

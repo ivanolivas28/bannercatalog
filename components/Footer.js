@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { signIn } from "next-auth/react";
 import config from "@/config";
 
 const Footer = () => {
@@ -63,7 +66,16 @@ const Footer = () => {
 
         <div className="pt-5 flex flex-col md:flex-row justify-between items-center gap-2 text-xs text-neutral-content/25">
           <span>© {new Date().getFullYear()} {config.appName} · Chihuahua, México · Todos los derechos reservados.</span>
-          <span>Banner Engineering · Schneider Electric · Turck · Wago</span>
+          <div className="flex items-center gap-3">
+            <span>Banner Engineering · Schneider Electric · Turck · Wago</span>
+            <button
+              onClick={() => signIn("google", { callbackUrl: "/admin/clientes" })}
+              className="opacity-20 hover:opacity-60 transition-opacity"
+              title="Admin"
+            >
+              🔒
+            </button>
+          </div>
         </div>
       </div>
     </footer>
