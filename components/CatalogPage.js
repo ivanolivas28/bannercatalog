@@ -414,8 +414,15 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty }) {
 
   return (
     <div
-      className={`card card-compact bg-base-100 border border-base-300 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 overflow-hidden flex flex-col ${borderTop}`}
+      className={`card card-compact bg-base-100 border shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 overflow-hidden flex flex-col ${p.esRemate ? "border-orange-400 border-2" : "border-base-300 " + borderTop}`}
     >
+      {/* Remate badge */}
+      {p.esRemate && (
+        <div className="bg-orange-500 text-white text-[10px] font-bold tracking-widest uppercase text-center py-0.5">
+          🔥 REMATE 🔥
+        </div>
+      )}
+
       <ProductImage p={p} href={p.urlProducto || undefined} />
 
       <div className="card-body flex flex-col flex-1 gap-1 p-3">
@@ -470,7 +477,18 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty }) {
         {/* Price + delivery badge */}
         <div className="flex items-center justify-between gap-2">
           {session ? (
-            precio ? (
+            p.esRemate ? (
+              <div className="flex flex-col">
+                <span className="font-mono font-bold text-sm text-orange-500">
+                  ${p.precioRemate?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD
+                </span>
+                {p.precioOriginal > 0 && (
+                  <span className="font-mono text-xs text-base-content/40 line-through">
+                    ${p.precioOriginal?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </span>
+                )}
+              </div>
+            ) : precio ? (
               <span className="font-mono font-bold text-sm text-base-content">{precio}</span>
             ) : (
               <span className="text-xs text-base-content/40">Consultar precio</span>
@@ -664,8 +682,9 @@ export default function CatalogPage() {
           pn:            p.pn,
           desc:          p.desc || nombreFriendly(p.pn, p.marca),
           marca:         p.marca || "",
-          precioUSD:     p.precioUSD  || 0,
+          precioUSD:     p.esRemate ? p.precioRemate : (p.precioUSD || 0),
           qty,
+          esRemate:      p.esRemate || false,
           tiempoEntrega: getEntregaInfo(p).tiempo || "",
           stockMX:       p.stockMX    || 0,
           stockUSA:      p.stockUSA   || 0,

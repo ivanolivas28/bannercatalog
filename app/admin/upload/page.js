@@ -5,11 +5,12 @@ import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 
 const FILE_SLOTS = [
-  { key: "mx",       label: "MX — Almacén México",     emoji: "🇲🇽", hint: "TFG - Inventario General" },
+  { key: "mx",       label: "MX — Almacén México",         emoji: "🇲🇽", hint: "TFG - Inventario General" },
   { key: "usa",      label: "USA — Almacén Estados Unidos", emoji: "🇺🇸", hint: "MFG - Inventario General" },
-  { key: "chn",      label: "CHN — Almacén China",     emoji: "🇨🇳", hint: "NFG - Inventario General" },
-  { key: "banner",   label: "Banner Pricelist",         emoji: "🏷️",  hint: "banner_pricelist_download_…" },
-  { key: "sourcing", label: "Sourcing Routes",          emoji: "🗺️",  hint: "Sourcing Item …" },
+  { key: "chn",      label: "CHN — Almacén China",         emoji: "🇨🇳", hint: "NFG - Inventario General" },
+  { key: "banner",   label: "Banner Pricelist",             emoji: "🏷️",  hint: "banner_pricelist_download_…" },
+  { key: "sourcing", label: "Sourcing Routes",              emoji: "🗺️",  hint: "Sourcing Item …" },
+  { key: "remate",   label: "Productos en Remate 🔥",       emoji: "🔥",  hint: "Columnas: pn, desc, precioRemate, precioOriginal" },
 ];
 
 function formatDate(dateStr) {

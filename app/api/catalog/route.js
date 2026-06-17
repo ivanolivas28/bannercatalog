@@ -5,6 +5,7 @@ import {
   parsearSheet,
   parsearBannerPricelist,
   parsearSourcing,
+  parsearRemate,
   mergear,
   CATALOG_CONFIG,
 } from "@/libs/catalog-utils";
@@ -63,25 +64,29 @@ export async function GET() {
 
     let mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt;
 
+    let remateTxt = "";
+
     if (isLocal) {
       [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await cargarLocal().then(r => r);
     } else if (tieneBlob) {
-      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await Promise.all([
+      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt, remateTxt] = await Promise.all([
         fetchText(blobUrl("mx.csv")),
         fetchText(blobUrl("usa.csv")),
         fetchText(blobUrl("chn.csv")),
         fetchText(blobUrl("banner.xlsx")),
         fetchText(blobUrl("sourcing.xlsx")),
+        fetchText(blobUrl("remate.xlsx")).catch(() => ""),
       ]);
     } else {
       [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await cargarRemoto().then(r => r);
     }
 
-    const mx       = mxTxt       ? parsearSheet(mxTxt, "MX")             : [];
-    const usa      = usaTxt      ? parsearSheet(usaTxt, "USA")            : [];
-    const nfg      = chnTxt      ? parsearSheet(chnTxt, "CHN")            : [];
-    const banner   = bannerTxt   ? parsearBannerPricelist(bannerTxt)      : [];
-    const sourcing = sourcingTxt ? parsearSourcing(sourcingTxt)           : new Map();
+    const mx       = mxTxt       ? parsearSheet(mxTxt, "MX")        : [];
+    const usa      = usaTxt      ? parsearSheet(usaTxt, "USA")       : [];
+    const nfg      = chnTxt      ? parsearSheet(chnTxt, "CHN")       : [];
+    const banner   = bannerTxt   ? parsearBannerPricelist(bannerTxt) : [];
+    const sourcing = sourcingTxt ? parsearSourcing(sourcingTxt)      : new Map();
+    const remate   = remateTxt   ? parsearRemate(remateTxt)          : new Map();
 
     const todos = mergear(mx, usa, banner, nfg, sourcing);
 
@@ -90,11 +95,19 @@ export async function GET() {
       pn, desc, marca, familia, categoria,
       precioUSD, stockMX, stockUSA, stockCHN,
       leadTimeBanner, imagen, urlProducto, sourcingJun,
-    }) => ({
-      pn, desc, marca, familia, categoria,
-      precioUSD, stockMX, stockUSA, stockCHN,
-      leadTimeBanner, imagen, urlProducto, sourcingJun,
-    }));
+    }) => {
+      const oferta = remate.get(pn?.toUpperCase());
+      return {
+        pn, desc, marca, familia, categoria,
+        precioUSD, stockMX, stockUSA, stockCHN,
+        leadTimeBanner, imagen, urlProducto, sourcingJun,
+        ...(oferta ? {
+          esRemate: true,
+          precioRemate: oferta.precioRemate,
+          precioOriginal: oferta.precioOriginal || precioUSD,
+        } : {}),
+      };
+    });
 
     return NextResponse.json(productos, {
       headers: {

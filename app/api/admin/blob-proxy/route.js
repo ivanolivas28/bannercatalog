@@ -4,8 +4,8 @@ import * as XLSX from "xlsx";
 
 const ALLOWED = [
   "mx.csv", "usa.csv", "chn.csv",
-  "banner.xlsx", "sourcing.xlsx",
-  "banner.csv", "sourcing.csv",
+  "banner.xlsx", "sourcing.xlsx", "remate.xlsx",
+  "banner.csv", "sourcing.csv", "remate.csv",
   "mx.xlsx", "usa.xlsx", "chn.xlsx",
   "banner.txt", "sourcing.txt", "mx.txt",
 ];

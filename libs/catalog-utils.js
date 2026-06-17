@@ -166,6 +166,35 @@ export function parsearSourcing(csv) {
   return mapa;
 }
 
+// Returns Map<PN_UPPERCASE, { precioRemate, precioOriginal, desc }>
+export function parsearRemate(csv) {
+  if (!csv?.trim()) return new Map();
+  const lineas = csv.trim().split("\n");
+  if (lineas.length < 2) return new Map();
+
+  const enc = parsearCSV(lineas[0]).map((h) => h.trim().toLowerCase());
+  const idxPN       = enc.findIndex((h) => h.includes("pn") || h.includes("parte") || h.includes("model"));
+  const idxRemate   = enc.findIndex((h) => h.includes("remate") || h.includes("oferta") || h.includes("sale"));
+  const idxOriginal = enc.findIndex((h) => h.includes("original") || h.includes("lista") || h.includes("regular"));
+  const idxDesc     = enc.findIndex((h) => h.includes("desc"));
+
+  if (idxPN < 0 || idxRemate < 0) return new Map();
+
+  const mapa = new Map();
+  lineas.slice(1).forEach((linea) => {
+    const cols = parsearCSV(linea);
+    const pn = cols[idxPN]?.trim().toUpperCase();
+    const precioRemate = parseFloat(cols[idxRemate]?.replace(/[^0-9.]/g, "")) || 0;
+    if (!pn || !precioRemate) return;
+    mapa.set(pn, {
+      precioRemate,
+      precioOriginal: idxOriginal >= 0 ? parseFloat(cols[idxOriginal]?.replace(/[^0-9.]/g, "")) || 0 : 0,
+      desc: idxDesc >= 0 ? cols[idxDesc]?.trim() : "",
+    });
+  });
+  return mapa;
+}
+
 export function mergear(mx, usa, banner = [], nfg = [], sourcingMap = new Map()) {
   const mapa = new Map();
 
