@@ -339,6 +339,7 @@ export function filtrarProductos(productos, { busqueda, filtroActivo, filtroCate
   }
 
   if (filtroActivo === "MX")       res = res.filter((p) => p.stockMX > 0);
+  else if (filtroActivo === "REMATE") res = res.filter((p) => p.esRemate);
   else if (filtroActivo !== "all") res = res.filter((p) => p.marca === filtroActivo);
 
   if (filtroCategoria) res = res.filter((p) => p.categoria === filtroCategoria);

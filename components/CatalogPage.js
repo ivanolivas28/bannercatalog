@@ -906,12 +906,17 @@ export default function CatalogPage() {
                 { f: "TURCK",     label: "Turck" },
                 { f: "WAGO",      label: "Wago" },
                 { f: "MX",        label: "🇲🇽 Stock MX" },
+                { f: "REMATE",    label: "🔥 Remate" },
               ].map(({ f, label }) => (
                 <button
                   key={f}
                   onClick={() => handleFiltroMarca(f)}
                   className={`btn btn-sm rounded-full ${
-                    filtroActivo === f ? "btn-primary" : "btn-ghost border border-base-300"
+                    filtroActivo === f && f === "REMATE"
+                      ? "bg-orange-500 text-white border-orange-500 hover:bg-orange-600"
+                      : filtroActivo === f
+                      ? "btn-primary"
+                      : "btn-ghost border border-base-300"
                   }`}
                 >
                   {label}
