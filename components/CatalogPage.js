@@ -666,7 +666,7 @@ export default function CatalogPage() {
           marca:         p.marca || "",
           precioUSD:     p.precioUSD  || 0,
           qty,
-          tiempoEntrega: getEntregaInfo(p).label || "",
+          tiempoEntrega: getEntregaInfo(p).tiempo || "",
           stockMX:       p.stockMX    || 0,
           stockUSA:      p.stockUSA   || 0,
           stockCHN:      p.stockCHN   || 0,
