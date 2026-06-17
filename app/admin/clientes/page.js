@@ -60,6 +60,8 @@ function CustomerTable({ customers }) {
                   customerId={c.id}
                   currentStatus={c.status}
                   nombre={c.nombre}
+                  whatsapp={c.whatsapp}
+                  email={c.email}
                 />
               </td>
             </tr>
@@ -78,9 +80,13 @@ export default async function ClientesAdminPage() {
     .lean()
     .then((docs) =>
       docs.map((d) => ({
-        ...d,
         id: d._id.toString(),
-        _id: undefined,
+        nombre: d.nombre,
+        apellido: d.apellido,
+        empresa: d.empresa,
+        email: d.email || null,
+        whatsapp: d.whatsapp || null,
+        status: d.status,
         createdAt: d.createdAt?.toISOString(),
         approvedAt: d.approvedAt?.toISOString() || null,
         rejectedAt: d.rejectedAt?.toISOString() || null,

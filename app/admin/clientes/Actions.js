@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-export default function CustomerActions({ customerId, currentStatus, nombre }) {
+export default function CustomerActions({ customerId, currentStatus, nombre, whatsapp, email }) {
   const router = useRouter();
   const [loading, setLoading] = useState(null); // 'approve' | 'reject' | null
   const [accessInfo, setAccessInfo] = useState(null); // { accessUrl, whatsappUrl }
@@ -52,9 +52,31 @@ export default function CustomerActions({ customerId, currentStatus, nombre }) {
     });
   };
 
+  // Build contact WhatsApp URL (just to chat, not approval link)
+  const contactWaUrl = whatsapp
+    ? `https://wa.me/52${whatsapp.replace(/\D/g, "")}?text=Hola%20${encodeURIComponent(nombre)}%2C%20vi%20tu%20solicitud%20de%20acceso%20al%20cat%C3%A1logo%20de%20EQKOR%20Tienda.%20%C2%BFMe%20puedes%20decir%20a%20qu%C3%A9%20empresa%20perteneces%20y%20qu%C3%A9%20productos%20te%20interesan%3F`
+    : null;
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-2 flex-wrap">
+        {/* Contact button — always visible if has WhatsApp */}
+        {contactWaUrl && currentStatus === "pending" && (
+          <a
+            href={contactWaUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-sm btn-outline gap-1"
+            style={{ borderColor: "#25d366", color: "#25d366" }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              <path fillRule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.659 1.438 5.168L2 22l4.979-1.418A9.96 9.96 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2zM4 12a8 8 0 118 8 7.962 7.962 0 01-4.007-1.074l-.29-.171-2.955.842.856-2.878-.189-.302A7.96 7.96 0 014 12z" clipRule="evenodd"/>
+            </svg>
+            Contactar
+          </a>
+        )}
+
         {(currentStatus === "pending" || currentStatus === "rejected") && (
           <button
             onClick={() => handleAction("approve")}
