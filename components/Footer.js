@@ -53,7 +53,7 @@ const Footer = () => {
                 <i className="ti ti-map-pin text-base opacity-60" /> Av. Francisco Villa 6501 Int. 106, Las Granjas, Chihuahua
               </span>
               <a
-                href="https://api.whatsapp.com/send?phone=526145734888"
+                href="https://wa.me/526141980695"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 hover:text-white transition-colors"
