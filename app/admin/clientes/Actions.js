@@ -31,10 +31,11 @@ export default function CustomerActions({ customerId, currentStatus, nombre, wha
             accessUrl: data.accessUrl,
             whatsappUrl: data.whatsappUrl,
           });
+          // Don't refresh yet — wait until admin closes the link panel
         } else {
           toast.success("Cliente rechazado.");
+          router.refresh();
         }
-        router.refresh();
       }
     } catch (err) {
       toast.error("Error de conexión. Intenta de nuevo.");
@@ -151,6 +152,12 @@ export default function CustomerActions({ customerId, currentStatus, nombre, wha
           <p className="text-xs text-base-content/50 mt-1">
             Válido por 30 días · uso único
           </p>
+          <button
+            onClick={() => { setAccessInfo(null); router.refresh(); }}
+            className="btn btn-xs btn-ghost w-full mt-2"
+          >
+            Listo ✓
+          </button>
         </div>
       )}
     </div>
