@@ -45,6 +45,11 @@ const customerSchema = mongoose.Schema(
       type: String,
       trim: true,
     },
+    password: {
+      type: String,
+      private: true, // excluded from toJSON
+      default: null,
+    },
     loginToken: {
       type: String,
       default: null,

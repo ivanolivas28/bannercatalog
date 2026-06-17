@@ -1,5 +1,6 @@
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import config from "@/config";
 import connectMongo from "@/libs/mongoose";
 import Customer from "@/models/Customer";
@@ -21,6 +22,44 @@ export const authOptions = {
       },
     }),
 
+    // Email + password login (after customer sets password via magic link)
+    CredentialsProvider({
+      id: "customer-password",
+      name: "Email y contraseña",
+      credentials: {
+        email: { label: "Correo", type: "email" },
+        password: { label: "Contraseña", type: "password" },
+      },
+      async authorize(credentials) {
+        const { email, password } = credentials || {};
+        if (!email || !password) return null;
+
+        try {
+          await connectMongo();
+
+          const customer = await Customer.findOne({
+            email: email.toLowerCase().trim(),
+            status: "approved",
+          }).select("+password");
+
+          if (!customer || !customer.password) return null;
+
+          const valid = await bcrypt.compare(password, customer.password);
+          if (!valid) return null;
+
+          return {
+            id: customer._id.toString(),
+            name: `${customer.nombre} ${customer.apellido}`,
+            email: customer.email,
+          };
+        } catch (e) {
+          console.error("[next-auth] customer-password authorize error:", e.message);
+          return null;
+        }
+      },
+    }),
+
+    // Magic token — only used to verify identity and set password
     CredentialsProvider({
       id: "magic-token",
       name: "Magic Token",
@@ -41,11 +80,6 @@ export const authOptions = {
           });
 
           if (!customer) return null;
-
-          // Single-use: clear token after successful login
-          customer.loginToken = null;
-          customer.loginTokenExpiry = null;
-          await customer.save();
 
           return {
             id: customer._id.toString(),

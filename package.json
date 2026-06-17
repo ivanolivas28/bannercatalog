@@ -14,6 +14,7 @@
     "@headlessui/react": "^1.7.18",
     "@vercel/blob": "^2.4.0",
     "axios": "^1.6.8",
+    "bcryptjs": "^3.0.3",
     "crisp-sdk-web": "^1.0.22",
     "eslint": "8.47.0",
     "eslint-config-next": "13.4.19",
