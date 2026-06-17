@@ -1,55 +1,69 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useSession, signIn } from "next-auth/react";
+import { useSession, signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import config from "@/config";
 
-// A simple button to sign in with our providers (Google & Magic Links).
-// It automatically redirects user to callbackUrl (config.auth.callbackUrl) after login, which is normally a private page for users to manage their accounts.
-// If the user is already logged in, it will show their profile picture & redirect them to callbackUrl immediately.
-const ButtonSignin = ({ text = "Get started", extraStyle }) => {
+const ButtonSignin = ({ text = "Iniciar sesión", extraStyle }) => {
   const router = useRouter();
   const { data: session, status } = useSession();
 
-  const handleClick = () => {
-    if (status === "authenticated") {
-      router.push(config.auth.callbackUrl);
-    } else {
-      signIn(undefined, { callbackUrl: config.auth.callbackUrl });
-    }
-  };
-
   if (status === "authenticated") {
+    const initial = session.user?.name?.charAt(0) || session.user?.email?.charAt(0) || "?";
+    const displayName = session.user?.name || session.user?.email || "Mi cuenta";
+
     return (
-      <Link
-        href={config.auth.callbackUrl}
-        className={`btn ${extraStyle ? extraStyle : ""}`}
-      >
-        {session.user?.image ? (
-          <img
-            src={session.user?.image}
-            alt={session.user?.name || "Account"}
-            className="w-6 h-6 rounded-full shrink-0"
-            referrerPolicy="no-referrer"
-            width={24}
-            height={24}
-          />
-        ) : (
-          <span className="w-6 h-6 bg-base-300 flex justify-center items-center rounded-full shrink-0">
-            {session.user?.name?.charAt(0) || session.user?.email?.charAt(0)}
-          </span>
-        )}
-        {session.user?.name || session.user?.email || "Account"}
-      </Link>
+      <div className="dropdown dropdown-end">
+        <label tabIndex={0} className={`btn ${extraStyle ?? ""} gap-2`}>
+          {session.user?.image ? (
+            <img
+              src={session.user.image}
+              alt={displayName}
+              className="w-6 h-6 rounded-full shrink-0"
+              referrerPolicy="no-referrer"
+              width={24}
+              height={24}
+            />
+          ) : (
+            <span className="w-6 h-6 bg-primary/20 text-primary flex items-center justify-center rounded-full shrink-0 font-semibold text-xs">
+              {initial.toUpperCase()}
+            </span>
+          )}
+          <span className="max-w-[120px] truncate">{displayName}</span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 opacity-50" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </label>
+        <ul tabIndex={0} className="dropdown-content menu p-2 shadow-lg bg-base-100 rounded-xl w-52 mt-1 border border-base-200 z-[100]">
+          <li className="menu-title px-3 py-1">
+            <span className="text-xs text-base-content/50 truncate">{session.user?.email}</span>
+          </li>
+          {session.user?.isAdmin && (
+            <li>
+              <Link href="/admin/clientes" className="text-sm">
+                Panel admin
+              </Link>
+            </li>
+          )}
+          <li>
+            <button
+              onClick={() => signOut({ callbackUrl: "/signin" })}
+              className="text-sm text-error"
+            >
+              Cerrar sesión
+            </button>
+          </li>
+        </ul>
+      </div>
     );
   }
 
   return (
     <button
-      className={`btn ${extraStyle ? extraStyle : ""}`}
-      onClick={handleClick}
+      className={`btn ${extraStyle ?? ""}`}
+      onClick={() => router.push("/signin")}
     >
       {text}
     </button>
