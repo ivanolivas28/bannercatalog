@@ -21,6 +21,19 @@ export async function GET() {
     const { uid } = await odooAuth();
     return NextResponse.json({ ok: true, uid, checks });
   } catch (err) {
-    return NextResponse.json({ ok: false, error: err.message, checks });
+    // Also try raw XML-RPC to see exact response
+    let rawResponse = null;
+    try {
+      const body = `<?xml version="1.0"?><methodCall><methodName>authenticate</methodName><params><param><value><string>${process.env.ODOO_DB}</string></value></param><param><value><string>${process.env.ODOO_USER}</string></value></param><param><value><string>${process.env.ODOO_PASSWORD}</string></value></param><param><value><struct></struct></value></param></params></methodCall>`;
+      const res = await fetch(`${process.env.ODOO_URL}/xmlrpc/2/common`, {
+        method: "POST",
+        headers: { "Content-Type": "text/xml" },
+        body,
+      });
+      rawResponse = await res.text();
+    } catch (e) {
+      rawResponse = e.message;
+    }
+    return NextResponse.json({ ok: false, error: err.message, checks, rawResponse });
   }
 }
