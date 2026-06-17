@@ -418,8 +418,12 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty }) {
     >
       {/* Remate badge */}
       {p.esRemate && (
-        <div className="bg-orange-500 text-white text-[10px] font-bold tracking-widest uppercase text-center py-0.5">
-          🔥 REMATE 🔥
+        <div className="bg-orange-500 text-white text-[10px] font-bold tracking-widest uppercase text-center py-0.5 flex items-center justify-center gap-2">
+          🔥 REMATE
+          {p.cantidadRemate > 0 && (
+            <span className="bg-white/20 px-1.5 rounded">{p.cantidadRemate} pzas</span>
+          )}
+          🔥
         </div>
       )}
 

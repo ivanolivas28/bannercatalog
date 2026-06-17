@@ -105,6 +105,7 @@ export async function GET() {
           esRemate: true,
           precioRemate: oferta.precioRemate,
           precioOriginal: oferta.precioOriginal || precioUSD,
+          cantidadRemate: oferta.cantidad || 0,
         } : {}),
       };
     });

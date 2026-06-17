@@ -166,29 +166,50 @@ export function parsearSourcing(csv) {
   return mapa;
 }
 
-// Returns Map<PN_UPPERCASE, { precioRemate, precioOriginal, desc }>
+// Returns Map<PN_UPPERCASE, { precioRemate, precioOriginal, precioMXN, cantidad, desc }>
+// Supports two formats:
+// Format A (EQKOR remate): row 0 = group headers, row 1 = real headers (Part number, Descripcion, Cantidad disponible, Precio en USD contado, Precio en MXN contado, Precio en USD factura, ...)
+// Format B (generic): single header row with pn/desc/precioRemate/precioOriginal columns
 export function parsearRemate(csv) {
   if (!csv?.trim()) return new Map();
-  const lineas = csv.trim().split("\n");
+  const lineas = csv.trim().split("\n").filter((l) => l.trim());
   if (lineas.length < 2) return new Map();
 
-  const enc = parsearCSV(lineas[0]).map((h) => h.trim().toLowerCase());
-  const idxPN       = enc.findIndex((h) => h.includes("pn") || h.includes("parte") || h.includes("model"));
-  const idxRemate   = enc.findIndex((h) => h.includes("remate") || h.includes("oferta") || h.includes("sale"));
-  const idxOriginal = enc.findIndex((h) => h.includes("original") || h.includes("lista") || h.includes("regular"));
-  const idxDesc     = enc.findIndex((h) => h.includes("desc"));
+  // Detect Format A: second row has "Part number" or "part number"
+  const row0 = parsearCSV(lineas[0]).map((h) => h.trim().toLowerCase());
+  const row1 = parsearCSV(lineas[1]).map((h) => h.trim().toLowerCase());
+
+  let headers, dataStart;
+  if (row1.some((h) => h.includes("part number") || h.includes("part_number"))) {
+    // Format A — skip group header row, use row 1 as headers
+    headers = row1;
+    dataStart = 2;
+  } else {
+    headers = row0;
+    dataStart = 1;
+  }
+
+  const idxPN       = headers.findIndex((h) => h.includes("part number") || h.includes("part_number") || h.includes("pn") || h.includes("parte") || h.includes("model"));
+  const idxDesc     = headers.findIndex((h) => h.includes("desc"));
+  const idxCantidad = headers.findIndex((h) => h.includes("cantidad") || h.includes("qty") || h.includes("stock"));
+  // Precio USD contado (col 3 in Format A = index 3)
+  const idxRemate   = headers.findIndex((h) => h.includes("precio en usd") || h.includes("precio_usd") || h.includes("remate") || h.includes("oferta") || h.includes("sale") || h.includes("usd"));
+  // Precio USD factura (col 5 in Format A)
+  const allUSD      = headers.reduce((acc, h, i) => (h.includes("precio en usd") || h.includes("usd")) ? [...acc, i] : acc, []);
+  const idxOriginal = allUSD.length > 1 ? allUSD[1] : -1;
 
   if (idxPN < 0 || idxRemate < 0) return new Map();
 
   const mapa = new Map();
-  lineas.slice(1).forEach((linea) => {
+  lineas.slice(dataStart).forEach((linea) => {
     const cols = parsearCSV(linea);
     const pn = cols[idxPN]?.trim().toUpperCase();
-    const precioRemate = parseFloat(cols[idxRemate]?.replace(/[^0-9.]/g, "")) || 0;
+    const precioRemate = parseFloat(String(cols[idxRemate] || "").replace(/[^0-9.]/g, "")) || 0;
     if (!pn || !precioRemate) return;
     mapa.set(pn, {
       precioRemate,
-      precioOriginal: idxOriginal >= 0 ? parseFloat(cols[idxOriginal]?.replace(/[^0-9.]/g, "")) || 0 : 0,
+      precioOriginal: idxOriginal >= 0 ? parseFloat(String(cols[idxOriginal] || "").replace(/[^0-9.]/g, "")) || 0 : 0,
+      cantidad: idxCantidad >= 0 ? parseInt(cols[idxCantidad]) || 0 : 0,
       desc: idxDesc >= 0 ? cols[idxDesc]?.trim() : "",
     });
   });
