@@ -43,22 +43,34 @@ const Footer = () => {
               Contacto
             </h4>
             <div className="flex flex-col gap-2.5 text-sm text-neutral-content/50">
-              <a href="tel:+526141234567" className="flex items-center gap-2 hover:text-white transition-colors">
-                <i className="ti ti-phone text-base opacity-60" /> +52 614 XXX XXXX
+              <a href="tel:+526141980695" className="flex items-center gap-2 hover:text-white transition-colors">
+                <i className="ti ti-phone text-base opacity-60" /> +52 614 198 0695
               </a>
-              <a href="mailto:ventas@TU-DOMINIO.com" className="flex items-center gap-2 hover:text-white transition-colors">
-                <i className="ti ti-mail text-base opacity-60" /> ventas@TU-DOMINIO.com
+              <a href="mailto:ventas@eqkor.mx" className="flex items-center gap-2 hover:text-white transition-colors">
+                <i className="ti ti-mail text-base opacity-60" /> ventas@eqkor.mx
               </a>
               <span className="flex items-center gap-2">
-                <i className="ti ti-map-pin text-base opacity-60" /> Chihuahua, Chih. México
+                <i className="ti ti-map-pin text-base opacity-60" /> Av. Francisco Villa 6501 Int. 106, Las Granjas, Chihuahua
               </span>
               <a
-                href={`https://wa.me/5261400000000`}
+                href="https://api.whatsapp.com/send?phone=526145734888"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 hover:text-white transition-colors"
               >
                 <i className="ti ti-brand-whatsapp text-base opacity-60" /> WhatsApp directo
+              </a>
+            </div>
+            {/* Redes sociales */}
+            <div className="flex gap-3 mt-4">
+              <a href="https://www.facebook.com/eqkor.ind" target="_blank" rel="noopener noreferrer" className="opacity-50 hover:opacity-100 transition-opacity">
+                <i className="ti ti-brand-facebook text-lg" />
+              </a>
+              <a href="https://www.instagram.com/eqkor.automatizacion/" target="_blank" rel="noopener noreferrer" className="opacity-50 hover:opacity-100 transition-opacity">
+                <i className="ti ti-brand-instagram text-lg" />
+              </a>
+              <a href="https://www.youtube.com/channel/UC8a-YjovoRHOlxqM2-6TG6g" target="_blank" rel="noopener noreferrer" className="opacity-50 hover:opacity-100 transition-opacity">
+                <i className="ti ti-brand-youtube text-lg" />
               </a>
             </div>
           </div>

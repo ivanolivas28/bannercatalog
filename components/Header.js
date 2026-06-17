@@ -24,11 +24,11 @@ const Header = () => {
       <div className="bg-neutral text-neutral-content text-xs py-2 hidden md:block">
         <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
           <div className="flex gap-6">
-            <a href="tel:+526141234567" className="flex items-center gap-1.5 opacity-70 hover:opacity-100 transition-opacity">
-              <i className="ti ti-phone text-sm" /> +52 614 XXX XXXX
+            <a href="tel:+526141980695" className="flex items-center gap-1.5 opacity-70 hover:opacity-100 transition-opacity">
+              <i className="ti ti-phone text-sm" /> +52 614 198 0695
             </a>
-            <a href="mailto:ventas@TU-DOMINIO.com" className="flex items-center gap-1.5 opacity-70 hover:opacity-100 transition-opacity">
-              <i className="ti ti-mail text-sm" /> ventas@TU-DOMINIO.com
+            <a href="mailto:ventas@eqkor.mx" className="flex items-center gap-1.5 opacity-70 hover:opacity-100 transition-opacity">
+              <i className="ti ti-mail text-sm" /> ventas@eqkor.mx
             </a>
           </div>
           <span className="flex items-center gap-1.5 opacity-50">
