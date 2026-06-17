@@ -8,6 +8,7 @@ const cotizacionItemSchema = new mongoose.Schema(
     qty: { type: Number, required: true, min: 1 },
     precioUSD: { type: Number, default: 0 },
     marca: { type: String, trim: true },
+    tiempoEntrega: { type: String, trim: true },
   },
   { _id: false }
 );

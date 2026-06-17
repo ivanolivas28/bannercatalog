@@ -661,15 +661,16 @@ export default function CatalogPage() {
       return [
         ...prev,
         {
-          pn:         p.pn,
-          desc:       p.desc || nombreFriendly(p.pn, p.marca),
-          marca:      p.marca || "",
-          precioUSD:  p.precioUSD  || 0,
+          pn:            p.pn,
+          desc:          p.desc || nombreFriendly(p.pn, p.marca),
+          marca:         p.marca || "",
+          precioUSD:     p.precioUSD  || 0,
           qty,
-          stockMX:    p.stockMX    || 0,
-          stockUSA:   p.stockUSA   || 0,
-          stockCHN:   p.stockCHN   || 0,
-          sourcingJun: p.sourcingJun || null,
+          tiempoEntrega: getEntregaInfo(p).label || "",
+          stockMX:       p.stockMX    || 0,
+          stockUSA:      p.stockUSA   || 0,
+          stockCHN:      p.stockCHN   || 0,
+          sourcingJun:   p.sourcingJun || null,
         },
       ];
     });

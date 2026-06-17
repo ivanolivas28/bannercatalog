@@ -141,6 +141,7 @@ export async function POST(req) {
         qty: Number(i.qty) || 1,
         precioUSD: Number(i.precioUSD) || 0,
         marca: i.marca || "",
+        tiempoEntrega: i.tiempoEntrega || "",
       })),
       customerName: `${nombre} ${apellido}`.trim(),
       customerEmail: email || null,
