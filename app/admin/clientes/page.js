@@ -1,3 +1,4 @@
+import Link from "next/link";
 import connectMongo from "@/libs/mongoose";
 import Customer from "@/models/Customer";
 import CustomerActions from "./Actions";
@@ -99,6 +100,12 @@ export default async function ClientesAdminPage() {
 
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-wrap gap-2 mb-6">
+        <Link href="/admin/clientes" className="btn btn-sm btn-primary">Clientes</Link>
+        <Link href="/admin/cotizaciones" className="btn btn-sm btn-ghost">Cotizaciones</Link>
+        <Link href="/admin/upload" className="btn btn-sm btn-ghost">Subir archivos</Link>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-2xl font-bold">Clientes registrados</h1>
         <p className="text-base-content/60 text-sm mt-1">

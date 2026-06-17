@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import toast, { Toaster } from "react-hot-toast";
 
 const FILE_SLOTS = [
@@ -108,7 +109,13 @@ export default function UploadPage() {
 
       {/* Header */}
       <div className="bg-base-100 border-b border-base-300 px-4 py-4 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto flex items-center justify-between">
+        <div className="max-w-lg mx-auto">
+          <div className="flex flex-wrap gap-2 mb-3">
+            <Link href="/admin/clientes" className="btn btn-xs btn-ghost">Clientes</Link>
+            <Link href="/admin/cotizaciones" className="btn btn-xs btn-ghost">Cotizaciones</Link>
+            <Link href="/admin/upload" className="btn btn-xs btn-primary">Subir archivos</Link>
+          </div>
+          <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold">📂 Actualizar Catálogo</h1>
             <p className="text-xs text-base-content/50">
@@ -118,6 +125,7 @@ export default function UploadPage() {
           {totalSubidos === 5 && (
             <span className="badge badge-success badge-sm">Todo al día ✓</span>
           )}
+          </div>
         </div>
       </div>
 
