@@ -1,173 +1,195 @@
 /**
- * Odoo Cloud JSON-RPC client
+ * Odoo Cloud XML-RPC client
  *
  * Required environment variables:
- *   ODOO_URL      — Base URL of your Odoo instance, e.g. https://yourcompany.odoo.com
- *   ODOO_DB       — Database name (usually the subdomain, e.g. "yourcompany")
- *   ODOO_USER     — Login email of the Odoo user / API user
- *   ODOO_PASSWORD — Password or API key for that user
- *
- * Optional:
- *   ODOO_SYNC_SECRET   — Bearer token to protect /api/odoo/sync
- *   ODOO_WEBHOOK_SECRET — Shared secret for verifying incoming Odoo webhooks
+ *   ODOO_URL      — e.g. https://yourcompany.odoo.com
+ *   ODOO_DB       — Database name, e.g. "yourcompany"
+ *   ODOO_USER     — Login email
+ *   ODOO_PASSWORD — Password or API key
  */
 
 // ---------------------------------------------------------------------------
-// Low-level helpers — XML-RPC over HTTPS
+// XML-RPC serialization
 // ---------------------------------------------------------------------------
 
-let _uid = null; // cached uid after authenticate
-
-function xmlVal(value) {
-  if (value === false || value === null || value === undefined)
+function xmlVal(v) {
+  if (v === null || v === undefined || v === false)
     return "<value><boolean>0</boolean></value>";
-  if (typeof value === "number" && Number.isInteger(value))
-    return `<value><int>${value}</int></value>`;
-  if (typeof value === "number")
-    return `<value><double>${value}</double></value>`;
-  if (typeof value === "boolean")
-    return `<value><boolean>${value ? 1 : 0}</boolean></value>`;
-  if (typeof value === "string")
-    return `<value><string>${value.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</string></value>`;
-  if (Array.isArray(value))
-    return `<value><array><data>${value.map(xmlVal).join("")}</data></array></value>`;
-  if (typeof value === "object") {
-    const members = Object.entries(value)
-      .map(([k, v]) => `<member><name>${k}</name>${xmlVal(v)}</member>`)
+  if (typeof v === "boolean")
+    return `<value><boolean>${v ? 1 : 0}</boolean></value>`;
+  if (typeof v === "number" && Number.isInteger(v))
+    return `<value><int>${v}</int></value>`;
+  if (typeof v === "number")
+    return `<value><double>${v}</double></value>`;
+  if (typeof v === "string")
+    return `<value><string>${v.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</string></value>`;
+  if (Array.isArray(v))
+    return `<value><array><data>${v.map(xmlVal).join("")}</data></array></value>`;
+  if (typeof v === "object") {
+    const members = Object.entries(v)
+      .map(([k, val]) => `<member><name>${k}</name>${xmlVal(val)}</member>`)
       .join("");
     return `<value><struct>${members}</struct></value>`;
   }
-  return `<value><string>${String(value)}</string></value>`;
+  return `<value><string>${String(v)}</string></value>`;
 }
 
-function xmlRpcBody(method, params) {
+function xmlBody(method, params) {
   return `<?xml version="1.0"?><methodCall><methodName>${method}</methodName><params>${
     params.map((p) => `<param>${xmlVal(p)}</param>`).join("")
   }</params></methodCall>`;
 }
 
-function parseXmlRpcFull(xml) {
-  // Use DOMParser-like approach via regex for Node.js environment
-  // Extract the methodResponse > params > param > value content
-  function parseValue(str) {
-    str = str.trim();
-    const int = str.match(/^<int>(.*?)<\/int>$/) || str.match(/^<i4>(.*?)<\/i4>$/);
-    if (int) return parseInt(int[1], 10);
-    const dbl = str.match(/^<double>(.*?)<\/double>$/);
-    if (dbl) return parseFloat(dbl[1]);
-    const bool = str.match(/^<boolean>(.*?)<\/boolean>$/);
-    if (bool) return bool[1] === "1";
-    const str2 = str.match(/^<string>([\s\S]*?)<\/string>$/);
-    if (str2) return str2[1].replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">");
-    if (str.startsWith("<array>")) {
-      const data = str.match(/<data>([\s\S]*?)<\/data>/)?.[1] || "";
-      const items = [];
-      const valRe = /<value>([\s\S]*?)<\/value>/g;
-      let m;
-      while ((m = valRe.exec(data)) !== null) items.push(parseValue(m[1].trim()));
-      return items;
-    }
-    if (str.startsWith("<struct>")) {
-      const obj = {};
-      const memberRe = /<member><name>(.*?)<\/name><value>([\s\S]*?)<\/value><\/member>/g;
-      let m;
-      while ((m = memberRe.exec(str)) !== null) obj[m[1]] = parseValue(m[2].trim());
-      return obj;
-    }
-    // bare value (no type tag) = string
-    if (!str.startsWith("<")) return str;
-    return str;
+// ---------------------------------------------------------------------------
+// XML-RPC recursive parser
+// ---------------------------------------------------------------------------
+
+function parseXml(xml) {
+  let pos = 0;
+
+  function skipWs() {
+    while (pos < xml.length && /\s/.test(xml[pos])) pos++;
   }
 
+  function readTag() {
+    skipWs();
+    if (xml[pos] !== "<") return null;
+    const end = xml.indexOf(">", pos);
+    const tag = xml.slice(pos + 1, end).trim();
+    pos = end + 1;
+    return tag;
+  }
+
+  function readUntilClose(tag) {
+    const close = `</${tag}>`;
+    const idx = xml.indexOf(close, pos);
+    if (idx === -1) throw new Error(`XML-RPC parse: missing </${tag}>`);
+    const content = xml.slice(pos, idx);
+    pos = idx + close.length;
+    return content;
+  }
+
+  function parseValue() {
+    skipWs();
+    // expect <value>
+    if (!xml.startsWith("<value>", pos) && !xml.startsWith("<value ", pos)) {
+      throw new Error(`XML-RPC parse: expected <value> at pos ${pos}`);
+    }
+    pos += xml.indexOf(">", pos) - pos + 1;
+    skipWs();
+
+    let result;
+
+    if (xml.startsWith("<int>", pos) || xml.startsWith("<i4>", pos)) {
+      const tag = xml.startsWith("<int>", pos) ? "int" : "i4";
+      pos += tag.length + 2;
+      result = parseInt(readUntilClose(tag), 10);
+    } else if (xml.startsWith("<i8>", pos)) {
+      pos += 4;
+      result = parseInt(readUntilClose("i8"), 10);
+    } else if (xml.startsWith("<double>", pos)) {
+      pos += 8;
+      result = parseFloat(readUntilClose("double"));
+    } else if (xml.startsWith("<boolean>", pos)) {
+      pos += 9;
+      result = readUntilClose("boolean") === "1";
+    } else if (xml.startsWith("<string>", pos)) {
+      pos += 8;
+      result = readUntilClose("string")
+        .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+    } else if (xml.startsWith("<nil/>", pos) || xml.startsWith("<nil />", pos)) {
+      pos += xml.startsWith("<nil/>", pos) ? 6 : 7;
+      result = null;
+    } else if (xml.startsWith("<array>", pos)) {
+      pos += 7; // <array>
+      skipWs();
+      pos += 6; // <data>
+      skipWs();
+      result = [];
+      while (!xml.startsWith("</data>", pos)) {
+        result.push(parseValue());
+        skipWs();
+      }
+      pos += 7; // </data>
+      skipWs();
+      pos += 8; // </array>
+    } else if (xml.startsWith("<struct>", pos)) {
+      pos += 8; // <struct>
+      skipWs();
+      result = {};
+      while (!xml.startsWith("</struct>", pos)) {
+        skipWs();
+        pos += 8; // <member>
+        skipWs();
+        pos += 6; // <name>
+        const nameEnd = xml.indexOf("</name>", pos);
+        const key = xml.slice(pos, nameEnd);
+        pos = nameEnd + 7; // </name>
+        skipWs();
+        result[key] = parseValue();
+        skipWs();
+        pos += 9; // </member>
+        skipWs();
+      }
+      pos += 9; // </struct>
+    } else {
+      // bare string (no type tag)
+      const end = xml.indexOf("</value>", pos);
+      result = xml.slice(pos, end)
+        .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+      pos = end;
+    }
+
+    skipWs();
+    pos += 8; // </value>
+    return result;
+  }
+
+  // Check for fault
   if (xml.includes("<fault>")) {
-    const msg = xml.match(/<name>faultString<\/name>\s*<value><string>([\s\S]*?)<\/string>/)?.[1] || "XML-RPC fault";
-    throw new Error(`Odoo RPC error: ${msg}`);
+    const msgMatch = xml.match(/<name>faultString<\/name>\s*<value><string>([\s\S]*?)<\/string>/);
+    throw new Error(`Odoo RPC error: ${msgMatch?.[1] || "XML-RPC fault"}`);
   }
 
-  const valueMatch = xml.match(/<params>\s*<param>\s*<value>([\s\S]*?)<\/value>\s*<\/param>/);
-  if (!valueMatch) return null;
-  return parseValue(valueMatch[1].trim());
+  // Navigate to <params><param><value>
+  const paramsIdx = xml.indexOf("<params>");
+  if (paramsIdx === -1) throw new Error("XML-RPC parse: no <params>");
+  pos = paramsIdx + 8;
+  skipWs();
+  pos += 7; // <param>
+  skipWs();
+
+  return parseValue();
 }
 
-function parseXmlRpcResponse(xml) {
-  if (xml.includes("<fault>")) {
-    const msg = xml.match(/<name>faultString<\/name>\s*<value><string>(.*?)<\/string>/s)?.[1] || "XML-RPC fault";
-    throw new Error(`Odoo RPC error: ${msg}`);
-  }
-  // Extract first value — handles int, string, boolean, array, struct
-  const intMatch = xml.match(/<value><int>(.*?)<\/int>/);
-  if (intMatch) return parseInt(intMatch[1], 10);
-  const i4Match = xml.match(/<value><i4>(.*?)<\/i4>/);
-  if (i4Match) return parseInt(i4Match[1], 10);
-  const strMatch = xml.match(/<value><string>([\s\S]*?)<\/string>/);
-  if (strMatch) return strMatch[1];
-  const boolMatch = xml.match(/<value><boolean>(.*?)<\/boolean>/);
-  if (boolMatch) return boolMatch[1] === "1";
-  // For arrays/structs we return the raw XML — callers that need structured data handle it
-  return xml;
-}
+// ---------------------------------------------------------------------------
+// HTTP helpers
+// ---------------------------------------------------------------------------
 
-async function xmlRpc(endpoint, method, params) {
+let _uid = null;
+
+async function xmlRpcCall(endpoint, method, params) {
   const url = `${process.env.ODOO_URL}${endpoint}`;
-  const body = xmlRpcBody(method, params);
-
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "text/xml", Accept: "text/xml" },
-    body,
-  });
-
-  if (!res.ok) throw new Error(`Odoo HTTP ${res.status} — ${url}`);
-
-  const text = await res.text();
-  return parseXmlRpcResponse(text);
-}
-
-// For object/execute calls we need a JSON-compatible response — use JSON-RPC only for execute_kw
-async function jsonRpc(path, method, params) {
-  const url = `${process.env.ODOO_URL}${path}`;
-  const body = JSON.stringify({ jsonrpc: "2.0", method: "call", id: Date.now(), params });
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body,
+    body: xmlBody(method, params),
   });
   if (!res.ok) throw new Error(`Odoo HTTP ${res.status} — ${url}`);
-  const json = await res.json();
-  if (json.error) {
-    const msg = json.error?.data?.message || json.error?.message || JSON.stringify(json.error);
-    throw new Error(`Odoo RPC error: ${msg}`);
-  }
-  return json.result;
+  return parseXml(await res.text());
 }
 
 async function callKw({ model, method, args = [], kwargs = {} }) {
   const uid = await ensureAuth();
-  // XML-RPC execute_kw: standard external API for Odoo
-  const result = await fetch(`${process.env.ODOO_URL}/xmlrpc/2/object`, {
-    method: "POST",
-    headers: { "Content-Type": "text/xml", Accept: "text/xml" },
-    body: xmlRpcBody("execute_kw", [
-      process.env.ODOO_DB,
-      uid,
-      process.env.ODOO_PASSWORD,
-      model,
-      method,
-      args,
-      { context: { lang: "es_MX", tz: "America/Monterrey" }, ...kwargs },
-    ]),
-  });
-
-  if (!result.ok) throw new Error(`Odoo HTTP ${result.status}`);
-  const text = await result.text();
-
-  if (text.includes("<fault>")) {
-    const msg = text.match(/<name>faultString<\/name>\s*<value><string>([\s\S]*?)<\/string>/)?.[1] || "XML-RPC fault";
-    throw new Error(`Odoo RPC error: ${msg}`);
-  }
-
-  // Parse response — try JSON-like extraction for arrays/structs
-  return parseXmlRpcFull(text);
+  return xmlRpcCall("/xmlrpc/2/object", "execute_kw", [
+    process.env.ODOO_DB,
+    uid,
+    process.env.ODOO_PASSWORD,
+    model,
+    method,
+    args,
+    { context: { lang: "es_MX", tz: "America/Monterrey" }, ...kwargs },
+  ]);
 }
 
 // ---------------------------------------------------------------------------
@@ -175,7 +197,7 @@ async function callKw({ model, method, args = [], kwargs = {} }) {
 // ---------------------------------------------------------------------------
 
 export async function odooAuth() {
-  const uid = await xmlRpc("/xmlrpc/2/common", "authenticate", [
+  const uid = await xmlRpcCall("/xmlrpc/2/common", "authenticate", [
     process.env.ODOO_DB,
     process.env.ODOO_USER,
     process.env.ODOO_PASSWORD,
@@ -199,35 +221,26 @@ async function ensureAuth() {
 // Partners (res.partner)
 // ---------------------------------------------------------------------------
 
-/**
- * Find an existing partner by email, or create one.
- * Returns the Odoo partner ID.
- */
 export async function findOrCreatePartner({ nombre, apellido, empresa, email, telefono }) {
   await ensureAuth();
 
-  // 1. Search by email
-  const existing = await callKw({
-    model: "res.partner",
-    method: "search_read",
-    args: [[["email", "=", email]]],
-    kwargs: { fields: ["id", "name", "email"], limit: 1 },
-  });
-
-  if (existing?.length) {
-    return existing[0].id;
+  if (email) {
+    const existing = await callKw({
+      model: "res.partner",
+      method: "search_read",
+      args: [[["email", "=", email]]],
+      kwargs: { fields: ["id", "name", "email"], limit: 1 },
+    });
+    if (Array.isArray(existing) && existing.length) return existing[0].id;
   }
 
-  // 2. Create new partner
   const vals = {
-    name: `${nombre} ${apellido}`.trim(),
-    email,
+    name: `${nombre || ""} ${apellido || ""}`.trim() || empresa || "Cliente web",
     phone: telefono || false,
     company_type: "person",
-    comment: empresa ? `Empresa: ${empresa}` : false,
   };
+  if (email) vals.email = email;
 
-  // Attempt to find / create the company and link it
   if (empresa) {
     const companies = await callKw({
       model: "res.partner",
@@ -235,87 +248,57 @@ export async function findOrCreatePartner({ nombre, apellido, empresa, email, te
       args: [[["name", "ilike", empresa], ["is_company", "=", true]]],
       kwargs: { fields: ["id", "name"], limit: 1 },
     });
-
-    if (companies?.length) {
+    if (Array.isArray(companies) && companies.length) {
       vals.parent_id = companies[0].id;
     } else {
-      const companyId = await callKw({
+      vals.parent_id = await callKw({
         model: "res.partner",
         method: "create",
         args: [{ name: empresa, is_company: true }],
       });
-      vals.parent_id = companyId;
     }
-    // Remove redundant comment when company is linked
-    delete vals.comment;
   }
 
-  const partnerId = await callKw({
+  return callKw({
     model: "res.partner",
     method: "create",
     args: [vals],
   });
-
-  return partnerId;
 }
 
 // ---------------------------------------------------------------------------
-// Product categories
+// Products
 // ---------------------------------------------------------------------------
 
-/**
- * Find or create a product.category by name.
- * Returns the category ID.
- */
-async function findOrCreateCategoria(nombre) {
-  if (!nombre) return false;
-
-  const found = await callKw({
-    model: "product.category",
-    method: "search_read",
-    args: [[["name", "=", nombre]]],
-    kwargs: { fields: ["id", "name"], limit: 1 },
-  });
-
-  if (found?.length) return found[0].id;
-
-  return callKw({
-    model: "product.category",
-    method: "create",
-    args: [{ name: nombre }],
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Products (product.template / product.product)
-// ---------------------------------------------------------------------------
-
-/**
- * Calculate delivery lead time in days using the same logic as getEntregaInfo.
- */
 function calcularSaleDelay(p) {
   if ((p.stockMX || 0) > 0) return 3;
   if ((p.stockUSA || 0) > 0 || (p.stockCHN || 0) > 0) return 12;
   if (p.leadTimeBanner > 0) return p.leadTimeBanner + 15;
-  return 30; // fallback when no data available
+  return 30;
 }
 
-/**
- * Sync a single product to Odoo — create or update product.template by internal reference (pn).
- *
- * @param {object} producto — { pn, desc, precioUSD, stockMX, stockUSA, stockCHN, leadTimeBanner, marca, categoria, familia, sourcingJun }
- * @returns {{ id: number, created: boolean }}
- */
 export async function syncProductToOdoo(producto) {
   await ensureAuth();
-
-  const { pn, desc, precioUSD, marca, categoria, familia } = producto;
-
+  const { pn, desc, precioUSD, familia, categoria, marca } = producto;
   if (!pn) throw new Error("syncProductToOdoo: pn is required");
 
-  // Resolve category
   const categName = familia || categoria || marca || "Automatización industrial";
-  const categId = await findOrCreateCategoria(categName);
+  let categId = false;
+  const foundCat = await callKw({
+    model: "product.category",
+    method: "search_read",
+    args: [[["name", "=", categName]]],
+    kwargs: { fields: ["id"], limit: 1 },
+  });
+  if (Array.isArray(foundCat) && foundCat.length) {
+    categId = foundCat[0].id;
+  } else {
+    categId = await callKw({
+      model: "product.category",
+      method: "create",
+      args: [{ name: categName }],
+    });
+  }
 
   const vals = {
     name: desc || pn,
@@ -327,131 +310,82 @@ export async function syncProductToOdoo(producto) {
     ...(categId ? { categ_id: categId } : {}),
   };
 
-  // Try to find existing product by internal reference
   const existing = await callKw({
     model: "product.template",
     method: "search_read",
     args: [[["default_code", "=", pn]]],
-    kwargs: { fields: ["id", "name", "default_code"], limit: 1 },
+    kwargs: { fields: ["id"], limit: 1 },
   });
 
-  if (existing?.length) {
-    await callKw({
-      model: "product.template",
-      method: "write",
-      args: [[existing[0].id], vals],
-    });
+  if (Array.isArray(existing) && existing.length) {
+    await callKw({ model: "product.template", method: "write", args: [[existing[0].id], vals] });
     return { id: existing[0].id, created: false };
   }
 
-  // Create new product
-  const newId = await callKw({
-    model: "product.template",
-    method: "create",
-    args: [vals],
-  });
-
+  const newId = await callKw({ model: "product.template", method: "create", args: [vals] });
   return { id: newId, created: true };
 }
 
-/**
- * Batch-sync all catalog products to Odoo.
- * Never throws — errors are collected per-product.
- *
- * @param {object[]} productos
- * @returns {{ synced: number, errors: Array<{ pn: string, error: string }> }}
- */
 export async function syncCatalogToOdoo(productos) {
   const errors = [];
   let synced = 0;
-
-  for (const producto of productos) {
+  for (const p of productos) {
     try {
-      await syncProductToOdoo(producto);
+      await syncProductToOdoo(p);
       synced++;
     } catch (err) {
-      errors.push({ pn: producto.pn || "?", error: err.message });
+      errors.push({ pn: p.pn || "?", error: err.message });
     }
   }
-
   return { synced, errors };
 }
 
 // ---------------------------------------------------------------------------
-// Quotations (sale.order + sale.order.line)
+// Quotations (sale.order)
 // ---------------------------------------------------------------------------
 
-/**
- * Create a quotation in Odoo from contacto + items.
- *
- * @param {object} opts
- * @param {object} opts.contacto — { nombre, apellido, empresa, email, telefono }
- * @param {Array}  opts.items    — [{ pn, qty, desc, precioUSD, marca }]
- * @returns {{ id: number, name: string }}
- */
 export async function createOdooQuotation({ contacto, items }) {
   await ensureAuth();
 
-  // 1. Find or create the partner
   const partnerId = await findOrCreatePartner(contacto);
+  if (!partnerId) throw new Error("No se pudo crear o encontrar el cliente en Odoo");
 
-  // 2. Build order lines
-  //    For each item we try to find the matching product.product by default_code.
-  //    If not found, we use a fallback with just the description (no product link).
   const orderLines = await Promise.all(
     items.map(async (item) => {
       const { pn, qty = 1, desc, precioUSD = 0, marca } = item;
-
-      // Try to resolve the internal product
       let productId = false;
       try {
         const products = await callKw({
           model: "product.product",
           method: "search_read",
           args: [[["default_code", "=", pn]]],
-          kwargs: { fields: ["id", "name"], limit: 1 },
+          kwargs: { fields: ["id"], limit: 1 },
         });
-        if (products?.length) productId = products[0].id;
-      } catch (_) {
-        // Non-fatal: proceed without linking product
-      }
+        if (Array.isArray(products) && products.length) productId = products[0].id;
+      } catch (_) {}
 
-      // sale.order.line tuple: (0, 0, vals) = create
       const lineVals = {
         product_uom_qty: qty,
         price_unit: precioUSD > 0 ? precioUSD : 0,
         name: desc || `${pn}${marca ? ` — ${marca}` : ""}`,
       };
       if (productId) lineVals.product_id = productId;
-      // When no product linked we still need product_id (can be 0 in some Odoo versions)
-      // For maximum compatibility we omit it and set name manually above
-
       return [0, 0, lineVals];
     })
   );
 
-  // 3. Create the sale.order
-  const soVals = {
-    partner_id: partnerId,
-    order_line: orderLines,
-    note: `Cotización generada desde el portal web — ${contacto.empresa || ""}`.trim(),
-    // client_order_ref can store the customer's reference if needed
-  };
-
   const soId = await callKw({
     model: "sale.order",
     method: "create",
-    args: [soVals],
+    args: [{ partner_id: partnerId, order_line: orderLines, note: `Portal web — ${contacto.empresa || ""}`.trim() }],
   });
 
-  // 4. Read back the order name (e.g. "S00042")
   const orders = await callKw({
     model: "sale.order",
     method: "read",
     args: [[soId], ["name"]],
   });
 
-  const name = orders?.[0]?.name || `SO-${soId}`;
-
+  const name = (Array.isArray(orders) && orders[0]?.name) ? orders[0].name : `SO-${soId}`;
   return { id: soId, name };
 }
