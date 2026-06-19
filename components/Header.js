@@ -51,7 +51,7 @@ const Header = () => {
                 {config.appName}
               </div>
               <div className="text-[9px] font-medium tracking-[1.5px] uppercase text-base-content/40">
-                Automatización
+                Tu proveedor industrial
               </div>
             </div>
           </Link>

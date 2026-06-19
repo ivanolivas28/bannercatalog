@@ -4,7 +4,7 @@ import CatalogPage from "@/components/CatalogPage";
 import Footer from "@/components/Footer";
 
 export const metadata = {
-  title: "MVP Industrial — Automatización Industrial | Banner, Schneider, Turck, Wago",
+  title: "Eqkor Industrial — Tu proveedor industrial | Banner, Schneider, Turck, Wago",
   description:
     "Distribuidor de componentes de automatización industrial: sensores Banner Engineering, PLCs Schneider Electric, sensores Turck, terminales Wago. Stock en México y USA. Cotización inmediata.",
 };
