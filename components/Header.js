@@ -43,9 +43,7 @@ const Header = () => {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-lg select-none">
-              ⬡
-            </div>
+            <img src="/logo-engrane-sin-fondo.png" alt="EQKOR logo" className="w-9 h-9 object-contain" />
             <div className="leading-tight">
               <div className="font-bold text-sm text-base-content tracking-tight">
                 {config.appName}
