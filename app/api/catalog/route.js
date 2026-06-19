@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { readFile } from "fs/promises";
+import { readFile, stat } from "fs/promises";
 import { join } from "path";
+import { list } from "@vercel/blob";
 import {
   parsearSheet,
   parsearBannerPricelist,
@@ -142,7 +143,20 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json(productos, {
+    // Get last upload date of MX stock file
+    let stockUpdatedAt = null;
+    try {
+      if (tieneBlob) {
+        const { blobs } = await list({ prefix: "catalog/mx" });
+        const mx = blobs.find((b) => b.pathname.startsWith("catalog/mx"));
+        if (mx?.uploadedAt) stockUpdatedAt = mx.uploadedAt;
+      } else if (isLocal) {
+        const s = await stat(join(process.cwd(), "public", "data", "TFG - Inventario General (1).csv"));
+        stockUpdatedAt = s.mtime;
+      }
+    } catch {}
+
+    return NextResponse.json({ productos, stockUpdatedAt }, {
       headers: {
         "Cache-Control": "s-maxage=1800, stale-while-revalidate=3600",
       },

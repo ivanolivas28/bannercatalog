@@ -607,6 +607,7 @@ export default function CatalogPage() {
 
   /* ── Catalog state ── */
   const [productos,       setProductos]       = useState([]);
+  const [stockUpdatedAt,  setStockUpdatedAt]  = useState(null);
   const [cargando,        setCargando]        = useState(true);
   const [busquedaInput,   setBusquedaInput]   = useState("");
   const [busqueda,        setBusqueda]        = useState("");
@@ -633,7 +634,11 @@ export default function CatalogPage() {
   useEffect(() => {
     fetch("/api/catalog")
       .then((r) => r.json())
-      .then((data) => setProductos(Array.isArray(data) && data.length > 0 ? data : DEMO_PRODUCTOS))
+      .then((data) => {
+        const lista = data?.productos ?? data;
+        setProductos(Array.isArray(lista) && lista.length > 0 ? lista : DEMO_PRODUCTOS);
+        if (data?.stockUpdatedAt) setStockUpdatedAt(new Date(data.stockUpdatedAt));
+      })
       .catch(() => setProductos(DEMO_PRODUCTOS))
       .finally(() => setCargando(false));
   }, []);
@@ -780,7 +785,9 @@ export default function CatalogPage() {
         <div className="max-w-6xl mx-auto px-6 relative">
           <div className="inline-flex items-center gap-2 bg-white/8 border border-white/12 rounded-full px-4 py-1.5 text-[11px] tracking-widest uppercase text-white/70 mb-6">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
-            Stock actualizado diariamente
+            {stockUpdatedAt
+              ? `Stock actualizado: ${stockUpdatedAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" })}`
+              : "Stock actualizado"}
           </div>
 
           <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight tracking-tight mb-4">
@@ -893,7 +900,7 @@ export default function CatalogPage() {
                   ? "Cargando inventario…"
                   : `${productosFiltrados.length.toLocaleString("es-MX")} producto${
                       productosFiltrados.length !== 1 ? "s" : ""
-                    } · Stock actualizado hoy`}
+                    } · Stock actualizado: ${stockUpdatedAt ? stockUpdatedAt.toLocaleDateString("es-MX", { day: "2-digit", month: "short", year: "numeric" }) : "—"}`}
               </p>
             </div>
 
