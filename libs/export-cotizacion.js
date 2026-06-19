@@ -1,7 +1,7 @@
 import * as XLSX from "xlsx";
 
 export function exportarCotizacionXLSX(items) {
-  const empresa = "Eqkor Industrial";
+  const empresa = "EQKOR";
   const fecha = new Date().toLocaleDateString("es-MX", {
     day: "2-digit", month: "long", year: "numeric",
   });

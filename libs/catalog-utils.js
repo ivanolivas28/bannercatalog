@@ -2,7 +2,7 @@
 
 export const CATALOG_CONFIG = {
   WHATSAPP: "5261400000000",
-  TU_NOMBRE: "Eqkor Industrial",
+  TU_NOMBRE: "EQKOR",
   DOMINIO: process.env.NEXT_PUBLIC_DOMINIO || "https://TU-DOMINIO.com",
   SOURCING_EXTRA_DIAS: 15,
   // Served from /public/data/ in development

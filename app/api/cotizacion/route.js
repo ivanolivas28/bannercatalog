@@ -99,7 +99,7 @@ function buildEmailHTML({ contacto, items }) {
 
     <!-- Footer -->
     <div style="background:#f4f4f2;padding:16px 28px;font-size:12px;color:#888;">
-      Solicitud generada automáticamente desde <strong>Eqkor Industrial</strong> — ${config.domainName}
+      Solicitud generada automáticamente desde <strong>EQKOR</strong> — ${config.domainName}
     </div>
   </div>
 </body>

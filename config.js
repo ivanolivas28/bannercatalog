@@ -2,7 +2,7 @@ import themes from "daisyui/src/theming/themes";
 
 const config = {
   // REQUIRED
-  appName: "Eqkor Industrial",
+  appName: "EQKOR",
   // REQUIRED: a short description of your app for SEO tags (can be overwritten)
   appDescription:
     "Distribuidor de componentes de automatización industrial: Banner Engineering, Schneider Electric, Turck y Wago. Stock en México y USA. Cotización inmediata.",
