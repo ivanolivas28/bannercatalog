@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import ButtonSignin from "./ButtonSignin";
 import config from "@/config";
 
@@ -43,7 +44,7 @@ const Header = () => {
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <img src="/logo-engrane-sin-fondo.png" alt="EQKOR logo" className="w-9 h-9 object-contain" />
+            <Image src="/logo-engrane-sin-fondo.png" alt="EQKOR logo" width={36} height={36} className="object-contain" />
             <div className="leading-tight">
               <div className="font-bold text-sm text-base-content tracking-tight">
                 {config.appName}
