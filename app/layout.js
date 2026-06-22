@@ -1,4 +1,5 @@
 import { Inter, IBM_Plex_Mono } from "next/font/google";
+import Script from "next/script";
 import PlausibleProvider from "next-plausible";
 import { getSEOTags } from "@/libs/seo";
 import ClientLayout from "@/components/LayoutClient";
@@ -33,6 +34,13 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/tabler-icons.min.css"
         />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-V0PNZSGE69" strategy="afterInteractive" />
+        <Script id="google-analytics" strategy="afterInteractive">{`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-V0PNZSGE69');
+        `}</Script>
       </head>
       <body>
         <ClientLayout>{children}</ClientLayout>
