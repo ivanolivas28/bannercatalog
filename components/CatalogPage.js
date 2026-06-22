@@ -388,11 +388,11 @@ function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onClo
 }
 
 /* ─── Single product card ─── */
-function ProductCard({ p, session, onCotizar, onAgregar, cartQty }) {
+function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
   const [qty, setQty] = useState(1);
   const entrega = getEntregaInfo(p);
   const desc    = p.desc || nombreFriendly(p.pn, p.marca);
-  const precio  = formatPrecioUSD(p.precioUSD);
+  const precio  = fmtPrecio ? fmtPrecio(p.esRemate ? p.precioRemate : p.precioUSD) : formatPrecioUSD(p.precioUSD);
 
   const borderTop =
     entrega.tipo === "mx"
@@ -484,11 +484,11 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty }) {
             p.esRemate ? (
               <div className="flex flex-col">
                 <span className="font-mono font-bold text-sm text-orange-500">
-                  ${p.precioRemate?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD
+                  {fmtPrecio ? fmtPrecio(p.precioRemate) : `$${p.precioRemate?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD`}
                 </span>
                 {p.precioOriginal > 0 && (
                   <span className="font-mono text-xs text-base-content/40 line-through">
-                    ${p.precioOriginal?.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    {fmtPrecio ? fmtPrecio(p.precioOriginal) : `$${p.precioOriginal?.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
                   </span>
                 )}
               </div>
@@ -618,6 +618,28 @@ export default function CatalogPage() {
   /* ── Pagination ── */
   const POR_PAGINA = 60;
   const [paginaActual, setPaginaActual] = useState(1);
+
+  /* ── Currency ── */
+  const monedaCliente = session?.user?.customer?.moneda || "USD";
+  const [tipoCambio, setTipoCambio] = useState(null);
+
+  useEffect(() => {
+    if (monedaCliente === "MXN") {
+      fetch("/api/tipo-cambio")
+        .then((r) => r.json())
+        .then((d) => { if (d.mxnPerUsd) setTipoCambio(d.mxnPerUsd); })
+        .catch(() => {});
+    }
+  }, [monedaCliente]);
+
+  const fmtPrecio = (usd) => {
+    if (!usd || usd <= 0) return null;
+    if (monedaCliente === "MXN" && tipoCambio) {
+      const mxn = Math.round((usd * (tipoCambio + 1)) * 10) / 10;
+      return `$${mxn.toLocaleString("es-MX", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} MXN`;
+    }
+    return `$${usd.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} USD`;
+  };
 
   /* ── Quote cart state ── */
   const [cotizacion, setCotizacion] = useState([]);
@@ -1020,6 +1042,7 @@ export default function CatalogPage() {
                     onCotizar={openModal}
                     onAgregar={agregarACotizacion}
                     cartQty={cotizacion.find((i) => i.pn === p.pn)?.qty || 0}
+                    fmtPrecio={fmtPrecio}
                   />
                 ))}
               </div>

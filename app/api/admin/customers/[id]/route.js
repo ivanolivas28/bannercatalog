@@ -20,9 +20,9 @@ export async function PATCH(req, { params }) {
 
     const { id } = params;
     const body = await req.json();
-    const { action, notes } = body;
+    const { action, notes, moneda } = body;
 
-    if (!["approve", "reject", "resend"].includes(action)) {
+    if (!["approve", "reject", "resend", "set_moneda"].includes(action)) {
       return NextResponse.json(
         { error: "Acción no válida." },
         { status: 400 }
@@ -37,6 +37,15 @@ export async function PATCH(req, { params }) {
         { error: "Cliente no encontrado." },
         { status: 404 }
       );
+    }
+
+    if (action === "set_moneda") {
+      if (!["USD", "MXN"].includes(moneda)) {
+        return NextResponse.json({ error: "Moneda inválida." }, { status: 400 });
+      }
+      customer.moneda = moneda;
+      await customer.save();
+      return NextResponse.json({ success: true, moneda: customer.moneda });
     }
 
     if (action === "approve" || action === "resend") {

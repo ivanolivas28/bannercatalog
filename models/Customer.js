@@ -58,6 +58,11 @@ const customerSchema = mongoose.Schema(
       type: Date,
       default: null,
     },
+    moneda: {
+      type: String,
+      enum: ["USD", "MXN"],
+      default: "USD",
+    },
   },
   {
     timestamps: true,

@@ -63,6 +63,7 @@ function CustomerTable({ customers }) {
                   nombre={c.nombre}
                   whatsapp={c.whatsapp}
                   email={c.email}
+                  moneda={c.moneda || "USD"}
                 />
               </td>
             </tr>

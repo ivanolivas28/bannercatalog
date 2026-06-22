@@ -118,6 +118,7 @@ export const authOptions = {
                 id: customer._id.toString(),
                 nombre: customer.nombre,
                 empresa: customer.empresa,
+                moneda: customer.moneda || "USD",
               };
             } else {
               token.isApproved = false;

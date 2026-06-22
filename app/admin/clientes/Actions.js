@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-export default function CustomerActions({ customerId, currentStatus, nombre, whatsapp, email }) {
+export default function CustomerActions({ customerId, currentStatus, nombre, whatsapp, email, moneda: monedaInicial = "USD" }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(null); // 'approve' | 'reject' | null
-  const [accessInfo, setAccessInfo] = useState(null); // { accessUrl, whatsappUrl }
+  const [loading, setLoading] = useState(null);
+  const [accessInfo, setAccessInfo] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [moneda, setMoneda] = useState(monedaInicial);
+  const [monedaLoading, setMonedaLoading] = useState(false);
 
   const handleAction = async (action) => {
     setLoading(action);
@@ -40,6 +42,28 @@ export default function CustomerActions({ customerId, currentStatus, nombre, wha
       toast.error("Error de conexión. Intenta de nuevo.");
     } finally {
       setLoading(null);
+    }
+  };
+
+  const handleMoneda = async (nueva) => {
+    setMonedaLoading(true);
+    try {
+      const res = await fetch(`/api/admin/customers/${customerId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set_moneda", moneda: nueva }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMoneda(data.moneda);
+        toast.success(`Moneda cambiada a ${data.moneda}`);
+      } else {
+        toast.error(data.error || "Error al cambiar moneda.");
+      }
+    } catch {
+      toast.error("Error de conexión.");
+    } finally {
+      setMonedaLoading(false);
     }
   };
 
@@ -100,6 +124,24 @@ export default function CustomerActions({ customerId, currentStatus, nombre, wha
             ) : null}
             Reenviar link
           </button>
+        )}
+        {currentStatus === "approved" && (
+          <div className="flex items-center gap-1 border border-base-300 rounded-lg overflow-hidden">
+            <button
+              onClick={() => moneda !== "USD" && handleMoneda("USD")}
+              disabled={monedaLoading}
+              className={`btn btn-xs rounded-none ${moneda === "USD" ? "btn-primary" : "btn-ghost"}`}
+            >
+              USD
+            </button>
+            <button
+              onClick={() => moneda !== "MXN" && handleMoneda("MXN")}
+              disabled={monedaLoading}
+              className={`btn btn-xs rounded-none ${moneda === "MXN" ? "btn-primary" : "btn-ghost"}`}
+            >
+              MXN
+            </button>
+          </div>
         )}
         {(currentStatus === "pending" || currentStatus === "approved") && (
           <button
