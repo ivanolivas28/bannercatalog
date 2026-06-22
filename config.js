@@ -5,7 +5,7 @@ const config = {
   appName: "EQKOR",
   // REQUIRED: a short description of your app for SEO tags (can be overwritten)
   appDescription:
-    "Distribuidor de componentes de automatización industrial: Banner Engineering, Schneider Electric, Turck y Wago. Stock en México y USA. Cotización inmediata.",
+    "Distribuidor de componentes de automatización industrial en Chihuahua y México: Banner Engineering, Schneider Electric, Turck y Wago. Stock disponible. Cotización en menos de 2 horas.",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
   domainName: "TU-DOMINIO.com",
   crisp: {
