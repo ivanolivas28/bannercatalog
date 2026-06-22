@@ -219,13 +219,18 @@ async function ensureAuth() {
 
 export async function getMXNRate() {
   await ensureAuth();
-  const rows = await callKw({
-    model: "res.currency",
-    method: "search_read",
-    args: [[["name", "=", "MXN"]]],
-    kwargs: { fields: ["name", "rate", "inverse_rate", "date", "active"], limit: 1 },
-  });
-  return rows?.[0] || null;
+  // MXN is likely the base currency (rate=1). Get USD rate and derive MXN/USD from its inverse_rate.
+  const [mxn, usd] = await Promise.all([
+    callKw({ model: "res.currency", method: "search_read", args: [[["name", "=", "MXN"]]], kwargs: { fields: ["name", "rate", "inverse_rate", "date", "active"], limit: 1 } }),
+    callKw({ model: "res.currency", method: "search_read", args: [[["name", "=", "USD"]]], kwargs: { fields: ["name", "rate", "inverse_rate", "date", "active"], limit: 1 } }),
+  ]);
+  const mxnData = mxn?.[0] || null;
+  const usdData = usd?.[0] || null;
+  // If MXN is base (rate=1), then USD inverse_rate = MXN per 1 USD
+  const mxnPerUsd = mxnData?.rate === 1
+    ? (usdData?.inverse_rate || null)
+    : (mxnData?.inverse_rate || null);
+  return { mxnData, usdData, mxnPerUsd };
 }
 
 // ---------------------------------------------------------------------------
