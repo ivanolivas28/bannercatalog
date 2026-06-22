@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { odooAuth } from "@/libs/odoo";
+import { odooAuth, getMXNRate } from "@/libs/odoo";
 
 export async function GET() {
   const checks = {
@@ -19,7 +19,15 @@ export async function GET() {
 
   try {
     const { uid } = await odooAuth();
-    return NextResponse.json({ ok: true, uid, checks });
+
+    let mxnRate = null;
+    try {
+      mxnRate = await getMXNRate();
+    } catch (e) {
+      mxnRate = { error: e.message };
+    }
+
+    return NextResponse.json({ ok: true, uid, checks, mxnRate });
   } catch (err) {
     // Also try raw XML-RPC to see exact response
     let rawResponse = null;

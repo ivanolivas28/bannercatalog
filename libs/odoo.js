@@ -217,6 +217,17 @@ async function ensureAuth() {
   return _uid;
 }
 
+export async function getMXNRate() {
+  await ensureAuth();
+  const rows = await callKw({
+    model: "res.currency",
+    method: "search_read",
+    args: [[["name", "=", "MXN"]]],
+    kwargs: { fields: ["name", "rate", "inverse_rate", "date", "active"], limit: 1 },
+  });
+  return rows?.[0] || null;
+}
+
 // ---------------------------------------------------------------------------
 // Partners (res.partner)
 // ---------------------------------------------------------------------------
