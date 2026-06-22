@@ -804,7 +804,8 @@ export default function CatalogPage() {
         />
         <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
 
-        <div className="max-w-6xl mx-auto px-6 relative">
+        <div className="max-w-6xl mx-auto px-6 relative flex flex-col lg:flex-row items-center gap-10">
+          <div className="flex-1 min-w-0">
           <div className="inline-flex items-center gap-2 bg-white/8 border border-white/12 rounded-full px-4 py-1.5 text-[11px] tracking-widest uppercase text-white/70 mb-6">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
             {stockUpdatedAt
@@ -849,6 +850,17 @@ export default function CatalogPage() {
             <span className="opacity-40">·</span>
             <span>WAGO</span>
           </p>
+          </div>
+
+          {/* Hero product image */}
+          <div className="hidden lg:flex flex-shrink-0 w-[420px] items-center justify-center">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://bannerengineering-h.assetsadobe.com/is/image/content/dam/banner-engineering/3d-renders/product-group/divisionimages2024/updated/Div_2024_monitoring_rt.psd?wid=2000&qlt=60&fmt=webp"
+              alt="Productos Banner Engineering"
+              className="w-full object-contain drop-shadow-2xl"
+            />
+          </div>
         </div>
       </section>
 
