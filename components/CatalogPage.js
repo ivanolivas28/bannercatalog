@@ -801,7 +801,8 @@ export default function CatalogPage() {
           src="https://bannerengineering-h.assetsadobe.com/is/image//content/dam/banner-engineering/3d-renders/product-group/divisionimages2024/updated/Div-Main-product-grouping-ctr.psd?wid=1200&hei=630&fit=crop&qlt=60&fmt=png"
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-right"
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ objectPosition: "75% center" }}
         />
         {/* Gradient: dark left → transparent right */}
         <div className="absolute inset-0" style={{ background: "linear-gradient(to right, #0f1e2e 40%, rgba(15,30,46,0.7) 65%, rgba(15,30,46,0.1) 100%)" }} />
