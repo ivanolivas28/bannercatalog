@@ -12,6 +12,7 @@ import {
   DEMO_PRODUCTOS,
 } from "@/libs/catalog-utils";
 import { exportarCotizacionXLSX } from "@/libs/export-cotizacion";
+import toast from "react-hot-toast";
 
 /* ─── Product image with fallback ─── */
 function ProductImage({ p, href }) {
@@ -148,7 +149,7 @@ function CartItem({ item, session, onUpdateQty, onRemove }) {
 }
 
 /* ─── Quote cart side panel ─── */
-function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onClose }) {
+function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onSendOdoo, onClose }) {
   const subtotal = items.reduce(
     (s, i) => s + (i.precioUSD > 0 ? i.qty * i.precioUSD : 0),
     0
@@ -261,6 +262,16 @@ function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onClo
               >
                 <i className="ti ti-file-spreadsheet text-lg" /> Exportar cotización (.xlsx)
               </button>
+
+              {session?.user?.isAdmin && (
+                <button
+                  onClick={onSendOdoo}
+                  disabled={items.length === 0}
+                  className="btn btn-secondary w-full gap-2"
+                >
+                  <i className="ti ti-send text-lg" /> Mandar cotización a Odoo
+                </button>
+              )}
 
               <button onClick={onClose} className="btn btn-ghost btn-sm w-full text-base-content/50">
                 Seguir agregando productos
@@ -1030,9 +1041,22 @@ export default function CatalogPage() {
                 No encontramos <strong>&quot;{busqueda}&quot;</strong> en nuestro catálogo.
               </p>
               <p className="text-xs mb-6">Aún podemos conseguirlo. Déjanos tus datos y te cotizamos.</p>
-              <button onClick={() => openModal(busqueda)} className="btn btn-primary btn-sm">
-                Solicitar cotización especial
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                {busqueda.trim() && (
+                  <button
+                    onClick={() => {
+                      agregarACotizacion({ pn: busqueda.trim().toUpperCase(), desc: "", marca: "", precioUSD: 0, stockMX: 0, stockUSA: 0 }, 1);
+                      toast.success(`${busqueda.trim().toUpperCase()} agregado a tu cotización`);
+                    }}
+                    className="btn btn-outline btn-sm gap-2"
+                  >
+                    <i className="ti ti-shopping-cart-plus" /> Agregar &quot;{busqueda.trim().toUpperCase()}&quot; a cotización
+                  </button>
+                )}
+                <button onClick={() => openModal(busqueda)} className="btn btn-primary btn-sm">
+                  Solicitar cotización especial
+                </button>
+              </div>
             </div>
           )}
 
@@ -1185,6 +1209,20 @@ export default function CatalogPage() {
           onUpdateQty={actualizarQty}
           onRemove={quitarDeCotizacion}
           onExport={() => exportarCotizacionXLSX(cotizacion)}
+          onSendOdoo={async () => {
+            try {
+              const res = await fetch("/api/admin/cotizacion-odoo", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ items: cotizacion }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error || "Error");
+              toast.success(`Cotización ${data.name} creada en Odoo`);
+            } catch (err) {
+              toast.error(err.message || "Error al enviar a Odoo");
+            }
+          }}
           onClose={() => setCartOpen(false)}
         />
       )}
