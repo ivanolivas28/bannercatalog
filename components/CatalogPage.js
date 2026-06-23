@@ -798,7 +798,7 @@ export default function CatalogPage() {
         {/* Background image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="https://bannerengineering-h.assetsadobe.com/is/image/content/dam/banner-engineering/3d-renders/product-group/divisionimages2024/updated/Div_2024_monitoring_rt.psd?wid=2000&qlt=60&fmt=webp"
+          src="https://bannerengineering-h.assetsadobe.com/is/image//content/dam/banner-engineering/3d-renders/product-group/divisionimages2024/updated/Div-Main-product-grouping-ctr.psd?wid=1200&hei=630&fit=crop&qlt=60&fmt=png"
           alt=""
           aria-hidden="true"
           className="absolute inset-0 w-full h-full object-cover object-center"
