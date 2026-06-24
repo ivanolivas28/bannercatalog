@@ -43,6 +43,43 @@ export const CATEGORIAS_BU = {
   "80": "Conectividad y cableado",
 };
 
+// Subcategory chips per category — each entry is { label, keywords[] matched against description
+export const SUBCATEGORIAS = {
+  "Sensores fotoeléctricos": [
+    { label: "Difuso",            keywords: ["diffuse"] },
+    { label: "Campo fijo",        keywords: ["fixed field"] },
+    { label: "Polarizado",        keywords: ["polarized"] },
+    { label: "Retroreflectivo",   keywords: ["retroreflective"] },
+    { label: "Láser",             keywords: ["laser"] },
+    { label: "Fibra óptica",      keywords: ["fiber optic"] },
+    { label: "Convergente",       keywords: ["convergent"] },
+    { label: "Supresión de fondo",keywords: ["background suppression"] },
+  ],
+  "Indicadores y luces industriales": [
+    { label: "Torre de señal",    keywords: ["tower"] },
+    { label: "Indicador",         keywords: ["indicator"] },
+    { label: "Strip LED",         keywords: ["strip"] },
+    { label: "Beacon",            keywords: ["beacon"] },
+    { label: "Audible / Alarma",  keywords: ["audible", "alarm"] },
+    { label: "Worklight",         keywords: ["worklight", "work light"] },
+  ],
+  "Seguridad industrial": [
+    { label: "Cortina de luz",    keywords: ["light curtain", "ez screen"] },
+    { label: "Paro de emergencia",keywords: ["e-stop", "emergency stop"] },
+    { label: "Interlock",         keywords: ["interlock"] },
+    { label: "Jale de cuerda",    keywords: ["rope pull"] },
+    { label: "Muting",            keywords: ["muting"] },
+    { label: "Two-hand",          keywords: ["two-hand"] },
+    { label: "Relay de seguridad",keywords: ["safety relay"] },
+  ],
+  "Sensores de medición avanzada": [
+    { label: "Ultrasónico",       keywords: ["ultrasonic"] },
+    { label: "Laser de distancia",keywords: ["laser", "distance"] },
+    { label: "Array / Cortina",   keywords: ["array"] },
+    { label: "Triangulación",     keywords: ["triangulation"] },
+  ],
+};
+
 export function nombreCategoria(bu) {
   return CATEGORIAS_BU[String(bu ?? "").trim()] || "";
 }
@@ -350,7 +387,7 @@ export function imagenProducto(p) {
   return url && /^https?:\/\//i.test(url) ? url : "";
 }
 
-export function filtrarProductos(productos, { busqueda, filtroActivo, filtroCategoria, filtroFamilia }) {
+export function filtrarProductos(productos, { busqueda, filtroActivo, filtroCategoria, filtroSubcategoria, filtroFamilia }) {
   let res = [...productos];
   const q = (busqueda || "").toLowerCase();
 
@@ -370,6 +407,13 @@ export function filtrarProductos(productos, { busqueda, filtroActivo, filtroCate
   else if (filtroActivo !== "all") res = res.filter((p) => p.marca === filtroActivo);
 
   if (filtroCategoria) res = res.filter((p) => p.categoria === filtroCategoria);
+  if (filtroSubcategoria?.keywords?.length) {
+    const kws = filtroSubcategoria.keywords.map((k) => k.toLowerCase());
+    res = res.filter((p) => {
+      const d = (p.desc || "").toLowerCase();
+      return kws.some((k) => d.includes(k));
+    });
+  }
   if (filtroFamilia)   res = res.filter((p) => p.familia === filtroFamilia);
 
   res.sort((a, b) => {

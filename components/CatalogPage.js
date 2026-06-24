@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession, signIn } from "next-auth/react";
 import {
   filtrarProductos,
+  SUBCATEGORIAS,
   getEntregaInfo,
   formatPrecioUSD,
   imagenProducto,
@@ -626,8 +627,9 @@ export default function CatalogPage() {
   const [busquedaInput,   setBusquedaInput]   = useState("");
   const [busqueda,        setBusqueda]        = useState("");
   const [filtroActivo,    setFiltroActivo]    = useState("all");
-  const [filtroCategoria, setFiltroCategoria] = useState("");
-  const [filtroFamilia,   setFiltroFamilia]   = useState("");
+  const [filtroCategoria,    setFiltroCategoria]    = useState("");
+  const [filtroSubcategoria, setFiltroSubcategoria] = useState(null); // { label, keywords[] } | null
+  const [filtroFamilia,      setFiltroFamilia]      = useState("");
 
   /* ── Pagination ── */
   const POR_PAGINA = 60;
@@ -681,7 +683,7 @@ export default function CatalogPage() {
 
   /* ── Derived ── */
   const productosFiltrados = filtrarProductos(productos, {
-    busqueda, filtroActivo, filtroCategoria, filtroFamilia,
+    busqueda, filtroActivo, filtroCategoria, filtroSubcategoria, filtroFamilia,
   });
 
   const productosMostrados = productosFiltrados.slice(0, paginaActual * POR_PAGINA);
@@ -957,8 +959,8 @@ export default function CatalogPage() {
             </div>
           </div>
 
-          {/* Search + Taxonomy filters — 3-col grid on desktop, stacked on mobile */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 bg-base-100 border border-base-300 rounded-lg p-3 shadow-sm">
+          {/* Search + Taxonomy filters — 4-col grid on desktop, stacked on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5 bg-base-100 border border-base-300 rounded-lg p-3 shadow-sm">
             {/* Search */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-bold uppercase tracking-widest text-base-content/40">
@@ -989,7 +991,7 @@ export default function CatalogPage() {
               </label>
               <select
                 value={filtroCategoria}
-                onChange={(e) => { setFiltroCategoria(e.target.value); setFiltroFamilia(""); setPaginaActual(1); }}
+                onChange={(e) => { setFiltroCategoria(e.target.value); setFiltroSubcategoria(null); setFiltroFamilia(""); setPaginaActual(1); }}
                 className="select select-sm select-bordered w-full text-sm"
               >
                 <option value="">Todas las categorías</option>
@@ -997,6 +999,33 @@ export default function CatalogPage() {
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
+            </div>
+
+            {/* Subcategoría — chips, solo cuando hay chips para la categoría seleccionada */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-base-content/40">
+                Subcategoría
+              </label>
+              {filtroCategoria && SUBCATEGORIAS[filtroCategoria] ? (
+                <div className="flex flex-wrap gap-1 pt-0.5">
+                  {SUBCATEGORIAS[filtroCategoria].map((sub) => {
+                    const activo = filtroSubcategoria?.label === sub.label;
+                    return (
+                      <button
+                        key={sub.label}
+                        onClick={() => { setFiltroSubcategoria(activo ? null : sub); setPaginaActual(1); }}
+                        className={`badge badge-sm cursor-pointer select-none transition-colors ${
+                          activo ? "badge-primary text-white" : "badge-ghost border border-base-300 hover:border-primary hover:text-primary"
+                        }`}
+                      >
+                        {sub.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-[10px] text-base-content/30 pt-1">Selecciona una categoría</p>
+              )}
             </div>
 
             {/* Familia */}
