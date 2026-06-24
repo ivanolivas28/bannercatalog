@@ -77,10 +77,10 @@ const Header = () => {
           <div className="lg:hidden flex items-center gap-1">
             <ButtonSignin text="Entrar" extraStyle="btn-primary btn-sm text-xs px-3" />
             <button
-              className="btn btn-ghost btn-sm"
+              className="btn btn-ghost btn-sm text-base-content"
               onClick={() => setIsOpen(true)}
             >
-              <i className="ti ti-menu-2 text-xl" />
+              <i className="ti ti-menu-2 text-xl text-base-content" />
             </button>
           </div>
         </nav>

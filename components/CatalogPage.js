@@ -844,23 +844,6 @@ export default function CatalogPage() {
             Stock disponible · Cotización en &lt;2 horas · Envío a todo México.
           </p>
 
-          <div className="flex max-w-xl mb-8 rounded-lg overflow-hidden shadow-2xl">
-            <input
-              type="text"
-              value={busquedaInput}
-              onChange={(e) => setBusquedaInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-              placeholder="Busca un número de parte · ej: S18-2VP6D · TM221C16R · 280-101"
-              className="flex-1 bg-white text-base-content text-sm font-mono px-5 py-3.5 outline-none placeholder:text-base-content/30"
-            />
-            <button
-              onClick={handleBuscar}
-              className="bg-primary hover:bg-primary/90 text-white px-6 py-3.5 text-sm font-semibold flex items-center gap-2 transition-colors"
-            >
-              Buscar <i className="ti ti-arrow-right" />
-            </button>
-          </div>
-
           <p className="text-[10px] tracking-[2px] uppercase text-white/30 flex gap-3 flex-wrap">
             <span>BANNER ENGINEERING</span>
             <span className="opacity-40">·</span>
@@ -891,8 +874,8 @@ export default function CatalogPage() {
         </div>
       </div>
 
-      {/* ── CATEGORY BROWSE ── */}
-      <section className="bg-base-200 py-10 border-b border-base-300">
+      {/* ── CATEGORY BROWSE ── (hidden) */}
+      <section className="bg-base-200 py-10 border-b border-base-300 hidden">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-end justify-between mb-6">
             <div>
@@ -974,6 +957,24 @@ export default function CatalogPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="flex mb-5 rounded-lg overflow-hidden shadow-sm border border-base-300">
+            <input
+              type="text"
+              value={busquedaInput}
+              onChange={(e) => setBusquedaInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
+              placeholder="Busca un número de parte · ej: S18-2VP6D · TM221C16R · 280-101"
+              className="flex-1 bg-base-100 text-base-content text-sm font-mono px-4 py-3 outline-none placeholder:text-base-content/30"
+            />
+            <button
+              onClick={handleBuscar}
+              className="bg-primary hover:bg-primary/90 text-white px-5 py-3 text-sm font-semibold flex items-center gap-2 transition-colors shrink-0"
+            >
+              Buscar <i className="ti ti-arrow-right" />
+            </button>
           </div>
 
           {/* Taxonomy filters */}
