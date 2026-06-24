@@ -26,20 +26,31 @@ function parseWagoHTML(html, pn) {
   }
 
   // Find the row matching our PN
+  // Expected columns: [PN, Descripción, Precio lista, Precio neto, Stock]
   const pnUp = pn.toUpperCase();
   for (const row of rows) {
-    const rowText = row.join(" ").toUpperCase();
-    if (rowText.includes(pnUp)) {
-      // Try to extract price (contains $ or numbers with decimals) and stock (integer)
-      let precio = null;
-      let stock = null;
-      for (const cell of row) {
-        const clean = cell.replace(/[$,\s]/g, "");
-        if (/^\d+\.\d{2}$/.test(clean) && !precio) precio = parseFloat(clean);
-        else if (/^\d+$/.test(clean) && stock === null) stock = parseInt(clean);
-      }
-      return { pn, precio, stock, rawRow: row };
+    if (row[0]?.trim().toUpperCase() !== pnUp) continue;
+    const parsePrice = (s) => parseFloat((s || "").replace(/[$,\s]/g, "")) || null;
+    const parseStock = (s) => parseInt((s || "").replace(/[^\d]/g, "")) || 0;
+
+    if (row.length >= 5) {
+      return {
+        pn,
+        desc: row[1]?.trim() || null,
+        precioLista: parsePrice(row[2]),
+        precio: parsePrice(row[3]),   // precio neto (tu precio de distribuidor)
+        stock: parseStock(row[4]),
+        rawRow: row,
+      };
     }
+    // Fallback: scan for price/stock if columns don't match expected layout
+    let precio = null, stock = null;
+    for (const cell of row) {
+      const clean = cell.replace(/[$,\s]/g, "");
+      if (/^\d+\.\d+$/.test(clean) && !precio) precio = parseFloat(clean);
+      else if (/^\d+$/.test(clean) && stock === null) stock = parseInt(clean);
+    }
+    return { pn, precio, stock, rawRow: row };
   }
   return { pn, precio: null, stock: null, rawRow: null };
 }
