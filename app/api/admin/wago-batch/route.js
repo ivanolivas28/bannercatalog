@@ -4,10 +4,11 @@ import { authOptions } from "@/libs/next-auth";
 import { ensureAuth, callKw } from "@/libs/odoo";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300; // 5 min timeout for batch
+export const maxDuration = 55; // under Vercel 60s limit
 
 const WAGO_BASE = "https://wagopro.com";
-const DELAY_MS = 800; // polite delay between wagopro requests
+const DELAY_MS = 400;
+const BATCH_SIZE = 20;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -82,6 +83,8 @@ export async function GET(req) {
 
     const { searchParams } = new URL(req.url);
     const dryRun = searchParams.get("dry") === "1";
+    const offset = parseInt(searchParams.get("offset") || "0");
+    const limit  = parseInt(searchParams.get("limit")  || String(BATCH_SIZE));
 
     // 1. Get all WAGO products from Odoo (category path includes "wago")
     await ensureAuth();
@@ -118,12 +121,18 @@ export async function GET(req) {
       });
     }
 
+    // Paginate the product list
+    const totalProductos = products.length;
+    const batch = products.slice(offset, offset + limit);
+    const nextOffset = offset + limit < totalProductos ? offset + limit : null;
+
     if (dryRun) {
       return NextResponse.json({
         message: "DRY RUN — no se actualizó nada",
         categorias: categories.map((c) => c.complete_name),
-        totalProductos: products.length,
-        muestra: products.slice(0, 10).map((p) => ({
+        totalProductos,
+        offset, limit, nextOffset,
+        muestra: batch.slice(0, 10).map((p) => ({
           id: p.id, ref: p.default_code, nombre: p.name, precio: p.list_price,
         })),
       });
@@ -132,10 +141,10 @@ export async function GET(req) {
     // 2. Login to wagopro
     const cookieStr = await wagoLogin();
 
-    // 3. For each product, fetch wagopro stock/price and update Odoo
+    // 3. Process this batch
     const results = { updated: [], notFound: [], errors: [] };
 
-    for (const prod of products) {
+    for (const prod of batch) {
       const pn = (prod.default_code || "").trim();
       if (!pn) { results.errors.push({ id: prod.id, nombre: prod.name, error: "Sin referencia interna" }); continue; }
 
@@ -178,7 +187,12 @@ export async function GET(req) {
     }
 
     return NextResponse.json({
-      totalProductos: products.length,
+      totalProductos,
+      offset,
+      limit,
+      nextOffset,
+      nextUrl: nextOffset !== null ? `/api/admin/wago-batch?offset=${nextOffset}&limit=${limit}` : null,
+      done: nextOffset === null,
       updated: results.updated.length,
       notFound: results.notFound.length,
       errors: results.errors.length,
