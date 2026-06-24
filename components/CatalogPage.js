@@ -489,8 +489,8 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
           )}
         </div>
 
-        {/* Price + delivery badge */}
-        <div className="flex items-center justify-between gap-2">
+        {/* Price row */}
+        <div className="flex items-center gap-2">
           {session ? (
             p.esRemate ? (
               <div className="flex flex-col">
@@ -516,7 +516,10 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
               <i className="ti ti-lock text-xs" /> Ver precio
             </button>
           )}
+        </div>
 
+        {/* Delivery badge + time on same row */}
+        <p className="text-[10px] text-base-content/40 flex items-center gap-1.5">
           <span
             className={
               entrega.tipo === "mx"
@@ -534,10 +537,6 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
               ? "Pedido"
               : "Consultar"}
           </span>
-        </div>
-
-        {/* Delivery time */}
-        <p className="text-[10px] text-base-content/40 flex items-center gap-1">
           <i className="ti ti-clock text-xs" /> {entrega.tiempo}
         </p>
 
