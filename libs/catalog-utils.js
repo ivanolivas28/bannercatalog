@@ -119,6 +119,7 @@ export function parsearBannerPricelist(csv) {
   const idxFam    = enc.findIndex((h) => h.includes("family name"));
   const idxBU     = enc.findIndex((h) => h.includes("business unit"));
   const idxURL    = enc.findIndex((h) => h === "website url");
+  const idxOrigin = enc.findIndex((h) => h.includes("country of origin"));
 
   if (idxPN < 0) return [];
 
@@ -127,20 +128,21 @@ export function parsearBannerPricelist(csv) {
     const pn   = cols[idxPN]?.trim().toUpperCase();
     if (!pn) return null;
 
-    const leadTime    = idxLead >= 0 ? parseInt(cols[idxLead]) || 0 : 0;
-    const desc        = idxDesc >= 0 ? cols[idxDesc]?.trim() : "";
-    const precio      = idxPrecio >= 0 ? parseFloat(cols[idxPrecio]) || 0 : 0;
-    const imagen      = idxImg >= 0 ? cols[idxImg]?.trim() : "";
-    const familia     = idxFam >= 0 ? cols[idxFam]?.trim() : "";
-    const bu          = idxBU >= 0 ? cols[idxBU]?.trim() : "";
-    const urlProducto = idxURL >= 0 ? cols[idxURL]?.trim() : "";
-    const categoria   = nombreCategoria(bu);
+    const leadTime       = idxLead >= 0   ? parseInt(cols[idxLead]) || 0       : 0;
+    const desc           = idxDesc >= 0   ? cols[idxDesc]?.trim()               : "";
+    const precio         = idxPrecio >= 0 ? parseFloat(cols[idxPrecio]) || 0   : 0;
+    const imagen         = idxImg >= 0    ? cols[idxImg]?.trim()                : "";
+    const familia        = idxFam >= 0    ? cols[idxFam]?.trim()                : "";
+    const bu             = idxBU >= 0     ? cols[idxBU]?.trim()                 : "";
+    const urlProducto    = idxURL >= 0    ? cols[idxURL]?.trim()                : "";
+    const countryOfOrigin = idxOrigin >= 0 ? cols[idxOrigin]?.trim().toUpperCase() : "";
+    const categoria      = nombreCategoria(bu);
 
     return {
       pn, desc, leadTimeBanner: leadTime, precioUSD: precio,
       imagen, businessUnit: bu, categoria, familia,
       cat: familia || categoriaDefault("BANNER"),
-      marca: "BANNER", urlProducto,
+      marca: "BANNER", urlProducto, countryOfOrigin,
     };
   }).filter(Boolean);
 }
@@ -269,6 +271,7 @@ export function mergear(mx, usa, banner = [], nfg = [], sourcingMap = new Map())
       ex.businessUnit = b.businessUnit;
       ex.categoria = b.categoria;
       ex.familia = b.familia;
+      ex.countryOfOrigin = b.countryOfOrigin || "";
       if (b.familia) ex.cat = b.familia;
       else if (b.categoria && (!ex.cat || ex.cat === categoriaDefault(ex.marca))) ex.cat = b.categoria;
     } else {
@@ -292,20 +295,23 @@ export function getEntregaInfo(p) {
 
   const sourcing = p.sourcingJun || "USA to MTY";
   const esCHN = sourcing === "CHN to MTY";
+  // Products made in China cannot be imported via USA — only via CHN to MTY sourcing route
+  const origenChina = p.countryOfOrigin === "CN";
 
   // STEP 2 — Route-dependent warehouse check
   if (esCHN) {
     if (p.stockCHN > 0) {
       return { tipo: "usa", texto: "🇨🇳 En stock", tiempo: "Entrega 10–15 días hábiles" };
     }
-  } else {
-    // SLP to MTY or USA to MTY — use USA stock
+  } else if (!origenChina) {
+    // SLP to MTY or USA to MTY — only use USA stock if product is NOT made in China
     if (p.stockUSA > 0) {
       return { tipo: "usa", texto: "🇺🇸 En stock", tiempo: "Entrega 10–15 días hábiles" };
     }
   }
+  // If origenChina && !esCHN: skip USA stock — must order from factory
 
-  // STEP 3 — No stock anywhere
+  // STEP 3 — No usable stock, show manufacturing lead time
   if (!p.leadTimeBanner) {
     return { tipo: "consultar", texto: "Bajo pedido", tiempo: "Consultar disponibilidad" };
   }
