@@ -520,13 +520,19 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
           <span
             className={
               entrega.tipo === "mx"
-                ? "badge badge-success badge-sm text-white"
+                ? "badge badge-success badge-sm text-white shrink-0"
                 : entrega.tipo === "usa"
-                ? "badge badge-warning badge-sm text-white"
-                : "badge badge-ghost badge-sm"
+                ? "badge badge-warning badge-sm text-white shrink-0"
+                : "badge badge-ghost badge-sm shrink-0"
             }
           >
-            {entrega.texto}
+            {entrega.tipo === "mx"
+              ? "🇲🇽 MX"
+              : entrega.tipo === "usa"
+              ? (p.sourcingJun === "CHN to MTY" ? "🇨🇳 CHN" : "🇺🇸 USA")
+              : entrega.tipo === "pedido"
+              ? "Pedido"
+              : "Consultar"}
           </span>
         </div>
 

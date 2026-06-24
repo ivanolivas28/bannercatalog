@@ -73,13 +73,16 @@ const Header = () => {
             <ButtonSignin text="Iniciar sesión" extraStyle="btn-primary btn-sm" />
           </div>
 
-          {/* Mobile burger */}
-          <button
-            className="lg:hidden btn btn-ghost btn-sm"
-            onClick={() => setIsOpen(true)}
-          >
-            <i className="ti ti-menu-2 text-xl" />
-          </button>
+          {/* Mobile login + burger */}
+          <div className="lg:hidden flex items-center gap-1">
+            <ButtonSignin text="Entrar" extraStyle="btn-primary btn-sm text-xs px-3" />
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setIsOpen(true)}
+            >
+              <i className="ti ti-menu-2 text-xl" />
+            </button>
+          </div>
         </nav>
 
         {/* Mobile drawer */}
