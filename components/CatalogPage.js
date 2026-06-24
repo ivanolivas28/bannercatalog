@@ -541,12 +541,12 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
         </p>
 
         {/* Qty stepper + Add to quote */}
-        <div className="flex items-center gap-2 mt-1 pt-2 border-t border-base-200">
-          {/* Stepper */}
-          <div className="flex items-center border border-base-300 rounded-lg overflow-hidden flex-shrink-0">
+        <div className="flex items-center gap-1.5 mt-1 pt-2 border-t border-base-200">
+          {/* Stepper — compact */}
+          <div className="flex items-center border border-base-300 rounded overflow-hidden flex-shrink-0">
             <button
               onClick={(e) => { e.preventDefault(); setQty((q) => Math.max(1, q - 1)); }}
-              className="w-7 h-8 flex items-center justify-center text-base-content/50 hover:bg-base-200 text-sm"
+              className="w-6 h-7 flex items-center justify-center text-base-content/50 hover:bg-base-200 text-xs"
             >
               −
             </button>
@@ -556,11 +556,11 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
               min={1}
               onChange={handleQtyChange}
               onClick={(e) => e.stopPropagation()}
-              className="w-10 h-8 text-center text-sm font-mono bg-transparent border-x border-base-300 focus:outline-none"
+              className="w-8 h-7 text-center text-xs font-mono bg-transparent border-x border-base-300 focus:outline-none"
             />
             <button
               onClick={(e) => { e.preventDefault(); setQty((q) => q + 1); }}
-              className="w-7 h-8 flex items-center justify-center text-base-content/50 hover:bg-base-200 text-sm"
+              className="w-6 h-7 flex items-center justify-center text-base-content/50 hover:bg-base-200 text-xs"
             >
               +
             </button>
@@ -572,14 +572,12 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
               e.preventDefault();
               onAgregar(p, qty);
             }}
-            className={`btn btn-sm flex-1 gap-1 ${
+            className={`btn btn-xs flex-1 gap-1 h-7 min-h-0 text-xs ${
               cartQty > 0 ? "btn-success" : "btn-primary"
             }`}
           >
             {cartQty > 0 ? (
-              <>
-                <i className="ti ti-check text-sm" /> Agregar más
-              </>
+              <><i className="ti ti-check text-xs" /> Agregar más</>
             ) : (
               "Agregar a cotización"
             )}
