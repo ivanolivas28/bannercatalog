@@ -3,6 +3,10 @@
     {
       "path": "/api/odoo/sync?secret=ODOO_SYNC_SECRET",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/admin/wago-cron?secret=CRON_SECRET&offset=0",
+      "schedule": "0 3 * * *"
     }
   ]
 }
