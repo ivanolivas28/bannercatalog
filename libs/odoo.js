@@ -179,7 +179,7 @@ async function xmlRpcCall(endpoint, method, params) {
   return parseXml(await res.text());
 }
 
-async function callKw({ model, method, args = [], kwargs = {} }) {
+export async function callKw({ model, method, args = [], kwargs = {} }) {
   const uid = await ensureAuth();
   return xmlRpcCall("/xmlrpc/2/object", "execute_kw", [
     process.env.ODOO_DB,
@@ -212,7 +212,7 @@ export async function odooAuth() {
   return { uid };
 }
 
-async function ensureAuth() {
+export async function ensureAuth() {
   if (!_uid) await odooAuth();
   return _uid;
 }
