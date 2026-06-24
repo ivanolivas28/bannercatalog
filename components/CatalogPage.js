@@ -970,7 +970,7 @@ export default function CatalogPage() {
                   value={busquedaInput}
                   onChange={(e) => setBusquedaInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                  placeholder="ej: S18-2VP6D"
+                  placeholder="ej: TL70, sensor, touch, curtain…"
                   className="flex-1 bg-base-100 text-base-content text-sm font-mono px-3 py-2.5 outline-none placeholder:text-base-content/30 min-w-0"
                 />
                 <button
