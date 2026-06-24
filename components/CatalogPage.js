@@ -959,61 +959,67 @@ export default function CatalogPage() {
             </div>
           </div>
 
-          {/* Search bar */}
-          <div className="flex mb-5 rounded-lg overflow-hidden shadow-sm border border-base-300">
-            <input
-              type="text"
-              value={busquedaInput}
-              onChange={(e) => setBusquedaInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-              placeholder="Busca un número de parte · ej: S18-2VP6D · TM221C16R · 280-101"
-              className="flex-1 bg-base-100 text-base-content text-sm font-mono px-4 py-3 outline-none placeholder:text-base-content/30"
-            />
-            <button
-              onClick={handleBuscar}
-              className="bg-primary hover:bg-primary/90 text-white px-5 py-3 text-sm font-semibold flex items-center gap-2 transition-colors shrink-0"
-            >
-              Buscar <i className="ti ti-arrow-right" />
-            </button>
-          </div>
-
-          {/* Taxonomy filters */}
-          {mostrarTaxonomy && categoriasBanner.length > 0 && (
-            <div className="flex flex-wrap gap-3 mb-5 bg-base-100 border border-base-300 rounded-lg p-3 shadow-sm">
-              <div className="flex flex-col gap-1 min-w-[200px] flex-1">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-base-content/40">
-                  Categoría
-                </label>
-                <select
-                  value={filtroCategoria}
-                  onChange={(e) => { setFiltroCategoria(e.target.value); setFiltroFamilia(""); setPaginaActual(1); }}
-                  className="select select-sm select-bordered w-full text-sm"
+          {/* Search + Taxonomy filters — 3-col grid on desktop, stacked on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5 bg-base-100 border border-base-300 rounded-lg p-3 shadow-sm">
+            {/* Search */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-base-content/40">
+                Número de parte
+              </label>
+              <div className="flex rounded overflow-hidden border border-base-300">
+                <input
+                  type="text"
+                  value={busquedaInput}
+                  onChange={(e) => setBusquedaInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
+                  placeholder="ej: S18-2VP6D · TM221C16R"
+                  className="flex-1 bg-base-100 text-base-content text-sm font-mono px-3 py-2 outline-none placeholder:text-base-content/30 min-w-0"
+                />
+                <button
+                  onClick={handleBuscar}
+                  className="bg-primary hover:bg-primary/90 text-white px-3 py-2 text-sm font-semibold flex items-center gap-1 transition-colors shrink-0"
                 >
-                  <option value="">Todas las categorías</option>
-                  {categoriasBanner.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1 min-w-[200px] flex-1">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-base-content/40">
-                  Familia
-                </label>
-                <select
-                  value={filtroFamilia}
-                  onChange={(e) => { setFiltroFamilia(e.target.value); setPaginaActual(1); }}
-                  disabled={!filtroCategoria || familiasBanner.length === 0}
-                  className="select select-sm select-bordered w-full text-sm disabled:opacity-40"
-                >
-                  <option value="">Todas las familias</option>
-                  {familiasBanner.map((f) => (
-                    <option key={f} value={f}>{f}</option>
-                  ))}
-                </select>
+                  <i className="ti ti-search text-sm" />
+                  <span className="hidden sm:inline">Buscar</span>
+                </button>
               </div>
             </div>
-          )}
+
+            {/* Categoría */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-base-content/40">
+                Categoría
+              </label>
+              <select
+                value={filtroCategoria}
+                onChange={(e) => { setFiltroCategoria(e.target.value); setFiltroFamilia(""); setPaginaActual(1); }}
+                className="select select-sm select-bordered w-full text-sm"
+              >
+                <option value="">Todas las categorías</option>
+                {categoriasBanner.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Familia */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-bold uppercase tracking-widest text-base-content/40">
+                Familia
+              </label>
+              <select
+                value={filtroFamilia}
+                onChange={(e) => { setFiltroFamilia(e.target.value); setPaginaActual(1); }}
+                disabled={!filtroCategoria || familiasBanner.length === 0}
+                className="select select-sm select-bordered w-full text-sm disabled:opacity-40"
+              >
+                <option value="">Todas las familias</option>
+                {familiasBanner.map((f) => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           {/* Auth notice */}
           {!session && (
