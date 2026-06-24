@@ -972,15 +972,14 @@ export default function CatalogPage() {
                   value={busquedaInput}
                   onChange={(e) => setBusquedaInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-                  placeholder="ej: S18-2VP6D · TM221C16R"
-                  className="flex-1 bg-base-100 text-base-content text-sm font-mono px-3 py-2 outline-none placeholder:text-base-content/30 min-w-0"
+                  placeholder="ej: S18-2VP6D"
+                  className="flex-1 bg-base-100 text-base-content text-sm font-mono px-3 py-2.5 outline-none placeholder:text-base-content/30 min-w-0"
                 />
                 <button
                   onClick={handleBuscar}
-                  className="bg-primary hover:bg-primary/90 text-white px-3 py-2 text-sm font-semibold flex items-center gap-1 transition-colors shrink-0"
+                  className="bg-primary hover:bg-primary/90 text-white px-4 py-2.5 text-sm font-semibold flex items-center gap-1.5 transition-colors shrink-0"
                 >
-                  <i className="ti ti-search text-sm" />
-                  <span className="hidden sm:inline">Buscar</span>
+                  <i className="ti ti-search text-sm" /> Buscar
                 </button>
               </div>
             </div>
