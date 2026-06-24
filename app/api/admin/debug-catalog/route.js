@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { parsearSheet, parsearBannerPricelist, mergear } from "@/libs/catalog-utils";
-import { fetchCatalogCSV } from "@/libs/catalog-fetch";
 
 export const dynamic = "force-dynamic";
 
