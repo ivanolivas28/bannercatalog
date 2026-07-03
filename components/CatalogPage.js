@@ -404,7 +404,7 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
   const [qty, setQty] = useState(1);
   const entrega = getEntregaInfo(p);
   const desc    = p.desc || nombreFriendly(p.pn, p.marca);
-  const precio  = fmtPrecio ? fmtPrecio(p.esRemate ? p.precioRemate : p.precioUSD) : formatPrecioUSD(p.precioUSD);
+  const precio  = fmtPrecio ? fmtPrecio(p.esRemate ? p.precioContado : p.precioUSD) : formatPrecioUSD(p.precioUSD);
 
   const borderTop =
     entrega.tipo === "mx"
@@ -494,14 +494,31 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
         <div className="flex items-center gap-2">
           {session ? (
             p.esRemate ? (
-              <div className="flex flex-col">
-                <span className="font-mono font-bold text-sm text-orange-500">
-                  {fmtPrecio ? fmtPrecio(p.precioRemate) : `$${p.precioRemate?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD`}
-                </span>
-                {p.precioOriginal > 0 && (
-                  <span className="font-mono text-xs text-base-content/40 line-through">
-                    {fmtPrecio ? fmtPrecio(p.precioOriginal) : `$${p.precioOriginal?.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
+              <div className="flex flex-col gap-0.5 w-full">
+                {/* Contado */}
+                <div className="flex items-baseline justify-between gap-1">
+                  <span className="text-[9px] font-bold uppercase tracking-wide text-orange-500 shrink-0">Contado</span>
+                  <span className="font-mono font-bold text-sm text-orange-500">
+                    {fmtPrecio ? fmtPrecio(p.precioContado) : `$${p.precioContado?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD`}
                   </span>
+                </div>
+                {/* Crédito */}
+                {p.precioCredito > 0 && (
+                  <div className="flex items-baseline justify-between gap-1">
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-orange-400 shrink-0">Crédito</span>
+                    <span className="font-mono font-semibold text-xs text-orange-400">
+                      {fmtPrecio ? fmtPrecio(p.precioCredito) : `$${p.precioCredito?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD`}
+                    </span>
+                  </div>
+                )}
+                {/* Lista tachado */}
+                {p.precioListPrice > 0 && (
+                  <div className="flex items-baseline justify-between gap-1">
+                    <span className="text-[9px] uppercase tracking-wide text-base-content/30 shrink-0">Lista</span>
+                    <span className="font-mono text-[10px] text-base-content/40 line-through">
+                      {fmtPrecio ? fmtPrecio(p.precioListPrice) : `$${p.precioListPrice?.toLocaleString("en-US", { minimumFractionDigits: 2 })} USD`}
+                    </span>
+                  </div>
                 )}
               </div>
             ) : precio ? (
@@ -729,9 +746,11 @@ export default function CatalogPage() {
           pn:            p.pn,
           desc:          p.desc || nombreFriendly(p.pn, p.marca),
           marca:         p.marca || "",
-          precioUSD:     p.esRemate ? p.precioRemate : (p.precioUSD || 0),
+          precioUSD:     p.esRemate ? p.precioContado : (p.precioUSD || 0),
           qty,
           esRemate:      p.esRemate || false,
+          precioContado: p.precioContado || null,
+          precioCredito: p.precioCredito || null,
           tiempoEntrega: getEntregaInfo(p).tiempo || "",
           stockMX:       p.stockMX    || 0,
           stockUSA:      p.stockUSA   || 0,

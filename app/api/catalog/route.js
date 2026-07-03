@@ -91,6 +91,9 @@ export async function GET() {
 
     const todos = mergear(mx, usa, banner, nfg, sourcing);
 
+    // Banner lookup map — used for remate products to find the original list price
+    const bannerMap = new Map(banner.map((b) => [b.pn?.toUpperCase(), b]));
+
     // Build set of PNs already in catalog
     const pnsEnCatalogo = new Set(todos.map((p) => p.pn?.toUpperCase()));
 
@@ -101,33 +104,37 @@ export async function GET() {
       leadTimeBanner, imagen, urlProducto, sourcingJun,
     }) => {
       const oferta = remate.get(pn?.toUpperCase());
+      if (!oferta) {
+        return { pn, desc, marca, familia, categoria, precioUSD, stockMX, stockUSA, stockCHN, leadTimeBanner, imagen, urlProducto, sourcingJun };
+      }
+      // precioListPrice (tachado): explicit lista column > Banner pricelist > merged precioUSD
+      const bannerEntry = bannerMap.get(pn?.toUpperCase());
+      const precioListPrice = oferta.precioLista || bannerEntry?.precioUSD || precioUSD;
       return {
         pn, desc, marca, familia, categoria,
         precioUSD, stockMX, stockUSA, stockCHN,
         leadTimeBanner, imagen, urlProducto, sourcingJun,
-        ...(oferta ? {
-          esRemate: true,
-          precioRemate: oferta.precioRemate,
-          precioOriginal: oferta.precioOriginal || precioUSD,
-          cantidadRemate: oferta.cantidad || 0,
-        } : {}),
+        esRemate: true,
+        precioContado: oferta.precioRemate,
+        precioCredito: oferta.precioCredito || 0,
+        precioListPrice,
+        cantidadRemate: oferta.cantidad || 0,
       };
     });
-
-    // Build Banner lookup map for enriching remate-only products
-    const bannerMap = new Map(banner.map((b) => [b.pn, b]));
 
     // Add remate-only products (not in main catalog), enriched with Banner pricelist data
     for (const [pn, oferta] of remate.entries()) {
       if (!pnsEnCatalogo.has(pn)) {
         const b = bannerMap.get(pn) || {};
+        const bannerPrice = b.precioUSD || 0;
+        const precioListPrice = oferta.precioLista || bannerPrice;
         productos.push({
           pn,
           desc: b.desc || oferta.desc || pn,
           marca: "BANNER",
           familia: b.familia || "",
           categoria: b.categoria || "",
-          precioUSD: oferta.precioOriginal || b.precioUSD || 0,
+          precioUSD: bannerPrice,
           stockMX: oferta.cantidad || 0,
           stockUSA: 0,
           stockCHN: 0,
@@ -136,8 +143,9 @@ export async function GET() {
           urlProducto: b.urlProducto || null,
           sourcingJun: null,
           esRemate: true,
-          precioRemate: oferta.precioRemate,
-          precioOriginal: oferta.precioOriginal || b.precioUSD || 0,
+          precioContado: oferta.precioRemate,
+          precioCredito: oferta.precioCredito || 0,
+          precioListPrice,
           cantidadRemate: oferta.cantidad || 0,
         });
       }
