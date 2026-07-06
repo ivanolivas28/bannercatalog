@@ -61,7 +61,7 @@ export async function GET() {
     const base = process.env.NEXTAUTH_URL || "https://tienda.eqkor.mx";
 
     const fetchText = (url) =>
-      fetch(url, { next: { revalidate: 1800 } }).then((r) => r.ok ? r.text() : "");
+      fetch(url, { cache: "no-store" }).then((r) => r.ok ? r.text() : "");
 
     const blobUrl = (file) => `${base}/api/admin/blob-proxy?file=${file}`;
 
@@ -215,7 +215,7 @@ export async function GET() {
 
     return NextResponse.json({ productos, stockUpdatedAt }, {
       headers: {
-        "Cache-Control": "s-maxage=1800, stale-while-revalidate=3600",
+        "Cache-Control": "no-store",
       },
     });
   } catch (err) {

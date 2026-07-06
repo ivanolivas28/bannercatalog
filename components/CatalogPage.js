@@ -771,7 +771,7 @@ export default function CatalogPage() {
 
   /* ── Load catalog via server API (avoids slow client-side CSV parsing) ── */
   useEffect(() => {
-    fetch("/api/catalog")
+    fetch("/api/catalog", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         const lista = data?.productos ?? data;
