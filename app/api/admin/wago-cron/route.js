@@ -106,7 +106,8 @@ export async function GET(req) {
         if (wago.precioNeto !== null) {
           const precioVenta = +(wago.precioNeto / 0.80).toFixed(4);
           await callKw({ model: "product.template", method: "write", args: [[prod.id], { standard_price: wago.precioNeto, list_price: precioVenta }], kwargs: {} });
-          blobResults[pn] = { stock: wago.stock ?? 0, precioNeto: wago.precioNeto, precioVenta, ts: Date.now() };
+          const catName = Array.isArray(prod.categ_id) ? prod.categ_id[1] : "WAGO";
+          blobResults[pn] = { stock: wago.stock ?? 0, precioNeto: wago.precioNeto, precioVenta, desc: prod.name, categoria: catName, ts: Date.now() };
           updated++;
         } else { notFound++; }
       } catch (_) { notFound++; }

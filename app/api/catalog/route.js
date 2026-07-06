@@ -169,6 +169,28 @@ export async function GET() {
       }
     }
 
+    // Add WAGO-only products (in wagopro but not in any stock CSV)
+    for (const [pn, w] of wagoStockMap.entries()) {
+      if (!pnsEnCatalogo.has(pn)) {
+        productos.push({
+          pn,
+          desc: w.desc || pn,
+          marca: "WAGO",
+          familia: "",
+          categoria: w.categoria || "WAGO",
+          precioUSD: w.precioVenta || 0,
+          stockMX: 0,
+          stockUSA: 0,
+          stockCHN: 0,
+          stockWago: w.stock ?? 0,
+          leadTimeBanner: 0,
+          imagen: null,
+          urlProducto: null,
+          sourcingJun: null,
+        });
+      }
+    }
+
     // Get last upload date of MX stock file
     let stockUpdatedAt = null;
     try {

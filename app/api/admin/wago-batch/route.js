@@ -176,9 +176,11 @@ export async function GET(req) {
           });
         }
 
+        const catName = Array.isArray(prod.categ_id) ? prod.categ_id[1] : (prod.categ_id?.name || "WAGO");
         results.updated.push({
           pn,
           nombre: prod.name,
+          categoria: catName,
           stockWago: wago.stock ?? 0,
           precioNeto: wago.precioNeto,
           precioVenta: wago.precioNeto !== null ? +(wago.precioNeto / 0.80).toFixed(4) : null,
@@ -199,7 +201,7 @@ export async function GET(req) {
         if (r.ok) existing = await r.json();
       }
       for (const u of results.updated) {
-        existing[u.pn] = { stock: u.stockWago, precioNeto: u.precioNeto, precioVenta: u.precioVenta, ts: Date.now() };
+        existing[u.pn] = { stock: u.stockWago, precioNeto: u.precioNeto, precioVenta: u.precioVenta, desc: u.nombre, categoria: u.categoria, ts: Date.now() };
       }
       await put(BLOB_KEY, JSON.stringify(existing), { access: "private", allowOverwrite: true });
     } catch (blobErr) {
