@@ -83,7 +83,7 @@ export default function WagoSyncPage() {
         </button>
         <div>
           <h1 className="text-xl font-bold">Sincronización WAGO</h1>
-          <p className="text-sm text-base-content/50">Actualiza precios de costo desde wagopro.com → Odoo</p>
+          <p className="text-sm text-base-content/50">Sincroniza stock, precios y tiempos de entrega WAGO desde wagopro.com</p>
         </div>
       </div>
 
@@ -106,7 +106,7 @@ export default function WagoSyncPage() {
           )}
         </div>
         <p className="text-xs text-base-content/40">
-          Procesa ~20 productos cada 40s. Total ~345 productos WAGO = ~12 lotes (~8 min total).
+          Procesa ~20 productos cada 40s. Actualiza stock, precio venta (costo/0.80) y guarda en catálogo. ~345 productos = ~8 min.
         </p>
       </div>
 
