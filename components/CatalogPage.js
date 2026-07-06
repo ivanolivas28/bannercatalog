@@ -792,27 +792,31 @@ export default function CatalogPage() {
 
   const totalDisponibles = productos.filter((p) => p.stockMX > 0 || p.stockUSA > 0).length;
 
-  const mostrarTaxonomy =
-    filtroActivo === "all" || filtroActivo === "BANNER" || filtroActivo === "MX";
+  const mostrarTaxonomy = filtroActivo !== "OTRO";
 
-  const categoriasBanner = mostrarTaxonomy
+  // Build category list filtered by active brand tab
+  const categoriasFiltradas = mostrarTaxonomy
     ? [
         ...new Set(
           productos
-            .filter((p) => p.categoria && p.marca === "BANNER")
+            .filter((p) => {
+              if (!p.categoria) return false;
+              if (filtroActivo === "all") return true;
+              return p.marca === filtroActivo;
+            })
             .map((p) => p.categoria)
         ),
-      ]
+      ].sort()
     : [];
 
-  const familiasBanner = filtroCategoria
+  const familiasFiltradas = filtroCategoria
     ? [
         ...new Set(
           productos
             .filter((p) => p.categoria === filtroCategoria && p.familia)
             .map((p) => p.familia)
         ),
-      ]
+      ].sort()
     : [];
 
   /* ── Cart helpers ── */
@@ -1102,7 +1106,7 @@ export default function CatalogPage() {
                 className="select select-sm select-bordered w-full text-sm"
               >
                 <option value="">Todas las categorías</option>
-                {categoriasBanner.map((c) => (
+                {categoriasFiltradas.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
@@ -1143,11 +1147,11 @@ export default function CatalogPage() {
               <select
                 value={filtroFamilia}
                 onChange={(e) => { setFiltroFamilia(e.target.value); setPaginaActual(1); }}
-                disabled={!filtroCategoria || familiasBanner.length === 0}
+                disabled={!filtroCategoria || familiasFiltradas.length === 0}
                 className="select select-sm select-bordered w-full text-sm disabled:opacity-40"
               >
                 <option value="">Todas las familias</option>
-                {familiasBanner.map((f) => (
+                {familiasFiltradas.map((f) => (
                   <option key={f} value={f}>{f}</option>
                 ))}
               </select>

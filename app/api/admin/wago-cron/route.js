@@ -79,7 +79,7 @@ export async function GET(req) {
       model: "product.template",
       method: "search_read",
       args: [[["categ_id", "in", catIds], ["active", "=", true]]],
-      kwargs: { fields: ["id", "default_code"], limit: 500 },
+      kwargs: { fields: ["id", "name", "default_code", "categ_id"], limit: 500 },
     });
 
     const batch = products.slice(offset, offset + BATCH_SIZE);
