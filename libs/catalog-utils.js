@@ -337,25 +337,30 @@ export function getEntregaInfo(p) {
     return { tipo: "mx", texto: "🇲🇽 En stock", tiempo: "Entrega 3–4 días hábiles" };
   }
 
+  // STEP 2 — WAGO: use wagopro.com stock
+  if (p.marca === "WAGO" || p.stockWago !== undefined) {
+    if (p.stockWago > 0) {
+      return { tipo: "usa", texto: "🇩🇪 En stock", tiempo: "Entrega ~1 semana" };
+    }
+    return { tipo: "pedido", texto: "Bajo pedido", tiempo: "Consultar tiempo de entrega" };
+  }
+
   const sourcing = p.sourcingJun || "USA to MTY";
   const esCHN = sourcing === "CHN to MTY";
-  // Products made in China cannot be imported via USA — only via CHN to MTY sourcing route
   const origenChina = p.countryOfOrigin === "CN";
 
-  // STEP 2 — Route-dependent warehouse check
+  // STEP 3 — Route-dependent warehouse check
   if (esCHN) {
     if (p.stockCHN > 0) {
       return { tipo: "usa", texto: "🇨🇳 En stock", tiempo: "Entrega 10–15 días hábiles" };
     }
   } else if (!origenChina) {
-    // SLP to MTY or USA to MTY — only use USA stock if product is NOT made in China
     if (p.stockUSA > 0) {
       return { tipo: "usa", texto: "🇺🇸 En stock", tiempo: "Entrega 10–15 días hábiles" };
     }
   }
-  // If origenChina && !esCHN: skip USA stock — must order from factory
 
-  // STEP 3 — No usable stock, show manufacturing lead time
+  // STEP 4 — No usable stock, show manufacturing lead time
   if (!p.leadTimeBanner) {
     return { tipo: "consultar", texto: "Bajo pedido", tiempo: "Consultar disponibilidad" };
   }

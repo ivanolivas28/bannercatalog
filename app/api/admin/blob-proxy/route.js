@@ -8,6 +8,7 @@ const ALLOWED = [
   "banner.csv", "sourcing.csv", "remate.csv",
   "mx.xlsx", "usa.xlsx", "chn.xlsx",
   "banner.txt", "sourcing.txt", "mx.txt",
+  "wago-stock.json",
 ];
 
 export async function GET(req) {
@@ -47,9 +48,8 @@ export async function GET(req) {
     }
 
     const text = await res.text();
-    return new NextResponse(text, {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
+    const ct = file.endsWith(".json") ? "application/json; charset=utf-8" : "text/plain; charset=utf-8";
+    return new NextResponse(text, { headers: { "Content-Type": ct } });
   } catch (err) {
     return new NextResponse(`Blob error: ${err.message}`, { status: 500 });
   }

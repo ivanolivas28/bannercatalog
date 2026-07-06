@@ -66,18 +66,27 @@ export async function GET() {
     let mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt;
 
     let remateTxt = "";
+    let wagoStockMap = new Map();
 
     if (isLocal) {
       [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await cargarLocal().then(r => r);
     } else if (tieneBlob) {
-      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt, remateTxt] = await Promise.all([
+      const [mxR, usaR, chnR, bannerR, sourcingR, remateR, wagoR] = await Promise.all([
         fetchText(blobUrl("mx.csv")),
         fetchText(blobUrl("usa.csv")),
         fetchText(blobUrl("chn.csv")),
         fetchText(blobUrl("banner.xlsx")),
         fetchText(blobUrl("sourcing.xlsx")),
         fetchText(blobUrl("remate.xlsx")).catch(() => ""),
+        fetchText(blobUrl("wago-stock.json")).catch(() => ""),
       ]);
+      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt, remateTxt] = [mxR, usaR, chnR, bannerR, sourcingR, remateR];
+      if (wagoR) {
+        try {
+          const wagoJson = JSON.parse(wagoR);
+          wagoStockMap = new Map(Object.entries(wagoJson).map(([pn, v]) => [pn.toUpperCase(), v]));
+        } catch (_) {}
+      }
     } else {
       [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await cargarRemoto().then(r => r);
     }
@@ -104,8 +113,16 @@ export async function GET() {
       leadTimeBanner, imagen, urlProducto, sourcingJun,
     }) => {
       const oferta = remate.get(pn?.toUpperCase());
+      const wagoData = wagoStockMap.get(pn?.toUpperCase());
+
+      // Enrich WAGO products with wagopro stock + price
+      const wagoEnrich = wagoData ? {
+        stockWago: wagoData.stock ?? 0,
+        precioUSD: wagoData.precioVenta || precioUSD,
+      } : {};
+
       if (!oferta) {
-        return { pn, desc, marca, familia, categoria, precioUSD, stockMX, stockUSA, stockCHN, leadTimeBanner, imagen, urlProducto, sourcingJun };
+        return { pn, desc, marca, familia, categoria, precioUSD, stockMX, stockUSA, stockCHN, leadTimeBanner, imagen, urlProducto, sourcingJun, ...wagoEnrich };
       }
       // precioListPrice (tachado): explicit lista column > Banner pricelist > merged precioUSD
       const bannerEntry = bannerMap.get(pn?.toUpperCase());

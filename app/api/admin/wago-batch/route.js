@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/next-auth";
 import { ensureAuth, callKw } from "@/libs/odoo";
+import { put, list } from "@vercel/blob";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 55; // under Vercel 60s limit
@@ -159,11 +160,12 @@ export async function GET(req) {
           continue;
         }
 
-        // Update Odoo: standard_price = costo wagopro, list_price if needed
+        // Update Odoo: standard_price = costo wagopro, list_price = costo / 0.80
         const vals = {};
-        if (wago.precioNeto !== null) vals.standard_price = wago.precioNeto;
-        // Optionally update list_price too — commented out to avoid overwriting your margins
-        // if (wago.precioLista !== null) vals.list_price = wago.precioLista;
+        if (wago.precioNeto !== null) {
+          vals.standard_price = wago.precioNeto;
+          vals.list_price = +(wago.precioNeto / 0.80).toFixed(4);
+        }
 
         if (Object.keys(vals).length) {
           await callKw({
@@ -177,13 +179,31 @@ export async function GET(req) {
         results.updated.push({
           pn,
           nombre: prod.name,
-          stockWago: wago.stock,
+          stockWago: wago.stock ?? 0,
           precioNeto: wago.precioNeto,
-          precioLista: wago.precioLista,
+          precioVenta: wago.precioNeto !== null ? +(wago.precioNeto / 0.80).toFixed(4) : null,
         });
       } catch (err) {
         results.errors.push({ pn, nombre: prod.name, error: err.message });
       }
+    }
+
+    // Merge batch results into wago-stock.json in Blob
+    try {
+      const BLOB_KEY = "catalog/wago-stock.json";
+      let existing = {};
+      const { blobs } = await list({ prefix: BLOB_KEY });
+      const existingBlob = blobs.find((b) => b.pathname === BLOB_KEY);
+      if (existingBlob) {
+        const r = await fetch(existingBlob.url, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` } });
+        if (r.ok) existing = await r.json();
+      }
+      for (const u of results.updated) {
+        existing[u.pn] = { stock: u.stockWago, precioNeto: u.precioNeto, precioVenta: u.precioVenta, ts: Date.now() };
+      }
+      await put(BLOB_KEY, JSON.stringify(existing), { access: "private", allowOverwrite: true });
+    } catch (blobErr) {
+      console.warn("[wago-batch] blob save failed:", blobErr.message);
     }
 
     return NextResponse.json({

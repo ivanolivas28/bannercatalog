@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ensureAuth, callKw } from "@/libs/odoo";
+import { put, list } from "@vercel/blob";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 55;
@@ -93,6 +94,7 @@ export async function GET(req) {
 
     const cookieStr = await wagoLogin();
     let updated = 0, notFound = 0;
+    const blobResults = {};
 
     for (const prod of batch) {
       const pn = (prod.default_code || "").trim();
@@ -102,10 +104,28 @@ export async function GET(req) {
         const html = await wagoSearch(pn, cookieStr);
         const wago = parseWagoHTML(html, pn);
         if (wago.precioNeto !== null) {
-          await callKw({ model: "product.template", method: "write", args: [[prod.id], { standard_price: wago.precioNeto }], kwargs: {} });
+          const precioVenta = +(wago.precioNeto / 0.80).toFixed(4);
+          await callKw({ model: "product.template", method: "write", args: [[prod.id], { standard_price: wago.precioNeto, list_price: precioVenta }], kwargs: {} });
+          blobResults[pn] = { stock: wago.stock ?? 0, precioNeto: wago.precioNeto, precioVenta, ts: Date.now() };
           updated++;
         } else { notFound++; }
       } catch (_) { notFound++; }
+    }
+
+    // Merge into wago-stock.json in Blob
+    try {
+      const BLOB_KEY = "catalog/wago-stock.json";
+      let existing = {};
+      const { blobs } = await list({ prefix: BLOB_KEY });
+      const existingBlob = blobs.find((b) => b.pathname === BLOB_KEY);
+      if (existingBlob) {
+        const r = await fetch(existingBlob.url, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` } });
+        if (r.ok) existing = await r.json();
+      }
+      Object.assign(existing, blobResults);
+      await put(BLOB_KEY, JSON.stringify(existing), { access: "private", allowOverwrite: true });
+    } catch (blobErr) {
+      console.warn("[wago-cron] blob save failed:", blobErr.message);
     }
 
     console.log(`[wago-cron] offset=${offset} updated=${updated} notFound=${notFound} nextOffset=${nextOffset}`);
