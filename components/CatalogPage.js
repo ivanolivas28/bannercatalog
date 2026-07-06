@@ -50,7 +50,7 @@ function ProductImage({ p, href }) {
 }
 
 /* ─── Cart item inside the quote panel ─── */
-function CartItem({ item, session, onUpdateQty, onRemove }) {
+function CartItem({ item, session, onUpdateQty, onUpdateNota, onRemove }) {
   const lineTotal = session && item.precioUSD > 0 ? item.qty * item.precioUSD : null;
 
   const esCHN = item.sourcingJun === "CHN to MTY";
@@ -145,12 +145,22 @@ function CartItem({ item, session, onUpdateQty, onRemove }) {
           </span>
         )}
       </div>
+
+      {/* Nota de partida */}
+      <textarea
+        rows={1}
+        placeholder="Nota (ej: color, voltaje, aplicación…)"
+        value={item.nota || ""}
+        onChange={(e) => onUpdateNota(item.pn, e.target.value)}
+        onInput={(e) => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; }}
+        className="mt-2 w-full resize-none rounded-lg bg-base-100 border border-base-300 text-[11px] text-base-content placeholder:text-base-content/30 px-2 py-1.5 focus:outline-none focus:border-primary leading-snug overflow-hidden"
+      />
     </div>
   );
 }
 
 /* ─── Quote cart side panel ─── */
-function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onSendOdoo, onClose }) {
+function QuoteCartPanel({ items, session, onUpdateQty, onUpdateNota, onRemove, onExport, onSendOdoo, onClose }) {
   const [moneda,     setMoneda]     = useState("USD");
   const [tipoCambio, setTipoCambio] = useState(17.50);
   const [tcInput,    setTcInput]    = useState("17.50");
@@ -255,7 +265,7 @@ function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onSen
             </div>
           ) : (
             items.map((item) => (
-              <CartItem key={item.pn} item={item} session={session} onUpdateQty={onUpdateQty} onRemove={onRemove} />
+              <CartItem key={item.pn} item={item} session={session} onUpdateQty={onUpdateQty} onUpdateNota={onUpdateNota} onRemove={onRemove} />
             ))
           )}
         </div>
@@ -836,6 +846,9 @@ export default function CatalogPage() {
   const actualizarQty = (pn, qty) =>
     setCotizacion((prev) => prev.map((i) => (i.pn === pn ? { ...i, qty } : i)));
 
+  const actualizarNota = (pn, nota) =>
+    setCotizacion((prev) => prev.map((i) => (i.pn === pn ? { ...i, nota } : i)));
+
   const quitarDeCotizacion = (pn) =>
     setCotizacion((prev) => prev.filter((i) => i.pn !== pn));
 
@@ -1336,6 +1349,7 @@ export default function CatalogPage() {
           items={cotizacion}
           session={session}
           onUpdateQty={actualizarQty}
+          onUpdateNota={actualizarNota}
           onRemove={quitarDeCotizacion}
           onExport={() => exportarCotizacionXLSX(cotizacion)}
           onSendOdoo={async ({ moneda, tipoCambio }) => {

@@ -380,7 +380,7 @@ export async function createOdooQuotation({ contacto, items, moneda = "USD", tip
 
   const tc = moneda === "MXN" ? tipoCambio : 1;
 
-  const orderLines = await Promise.all(
+  const orderLineGroups = await Promise.all(
     items.map(async (item) => {
       const { pn, qty = 1, desc, precioUSD = 0, marca } = item;
       let productId = false;
@@ -402,9 +402,16 @@ export async function createOdooQuotation({ contacto, items, moneda = "USD", tip
         x_studio_tiempo_de_entrega_demm: item.tiempoEntrega || "",
       };
       if (productId) lineVals.product_id = productId;
-      return [0, 0, lineVals];
+
+      const lines = [[0, 0, lineVals]];
+      if (item.nota?.trim()) {
+        lines.push([0, 0, { display_type: "line_note", name: item.nota.trim() }]);
+      }
+      return lines;
     })
   );
+
+  const orderLines = orderLineGroups.flat();
 
   const soVals = {
     partner_id: partnerId,
