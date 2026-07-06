@@ -23,7 +23,7 @@ const REGLAS_MARCA = [
   { marca: "BANNER",    regex: /^(S18|QS|T30|T18|Q45|P|DF|EZ|K50|K70|K80|MB|PVA|BRT|LG|PD|VE|WORLD)/i },
   { marca: "SCHNEIDER", regex: /^(TM|ATV|ATS|LRD?|NSX|NXX|LC1|LC2|LR|GV|A9|RM|XB|XS|XV|XY|RE|LT|NSYC|BMXC|BMEP|140|TSX)/i },
   { marca: "TURCK",     regex: /^(BI|NI|BC|BL|FCS|LI|RU|RM|PKG|PSG|BIM|NIM|VB|VG|TBEN|TBIL|TBPN|RSB|YF|UPROX|Bi|Ni)/i },
-  { marca: "WAGO",      regex: /^(2[0-9]{2,3}-|750|751|753|787|789|855|859)/i },
+  { marca: "WAGO",      regex: /^(2[2-8]\d-|2[0-9]{3}-|750|751|753|787|789|855|859)/i },
 ];
 
 export function detectarMarca(pn) {
