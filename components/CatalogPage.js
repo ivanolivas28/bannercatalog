@@ -57,7 +57,7 @@ function CartItem({ item, session, onUpdateQty, onUpdateNota, onRemove }) {
   const esCHN  = item.sourcingJun === "CHN to MTY";
   const secondaryStock = esWAGO ? (item.stockWago || 0) : esCHN ? (item.stockCHN || 0) : (item.stockUSA || 0);
   const secondaryLabel = esWAGO ? "WAGO" : esCHN ? "China" : "USA";
-  const secondaryFlag  = esWAGO ? "🇩🇪" : esCHN ? "🇨🇳" : "🇺🇸";
+  const secondaryFlag  = esWAGO ? "🇲🇽" : esCHN ? "🇨🇳" : "🇺🇸";
 
   return (
     <div className="bg-base-200 rounded-xl p-3">
@@ -501,7 +501,7 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
   const esCHN   = p.sourcingJun === "CHN to MTY";
   const secondaryStock = esWAGO ? (p.stockWago || 0) : esCHN ? (p.stockCHN || 0) : (p.stockUSA || 0);
   const secondaryLabel = esWAGO ? "WAGO" : esCHN ? "China" : "USA";
-  const secondaryFlag  = esWAGO ? "🇩🇪" : esCHN ? "🇨🇳" : "🇺🇸";
+  const secondaryFlag  = esWAGO ? "🇲🇽" : esCHN ? "🇨🇳" : "🇺🇸";
 
   const handleQtyChange = (e) => {
     const v = parseInt(e.target.value) || 1;
