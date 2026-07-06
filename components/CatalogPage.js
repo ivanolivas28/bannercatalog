@@ -154,6 +154,22 @@ function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onSen
   const [moneda,     setMoneda]     = useState("USD");
   const [tipoCambio, setTipoCambio] = useState(17.50);
   const [tcInput,    setTcInput]    = useState("17.50");
+  const [tcOdoo,     setTcOdoo]     = useState(null);
+
+  useEffect(() => {
+    if (!session?.user?.isAdmin) return;
+    fetch("/api/admin/tipo-cambio")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (d?.tipoCambioSugerido) {
+          const tc = d.tipoCambioSugerido;
+          setTipoCambio(tc);
+          setTcInput(String(tc));
+          setTcOdoo(d.tipoCambioOdoo);
+        }
+      })
+      .catch(() => {});
+  }, [session]);
 
   const subtotalUSD = items.reduce((s, i) => s + (i.precioUSD > 0 ? i.qty * i.precioUSD : 0), 0);
   const ivaUSD      = subtotalUSD * 0.16;
@@ -266,20 +282,27 @@ function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onSen
                   </div>
                 </div>
                 {moneda === "MXN" && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-base-content/60 shrink-0">Tipo de cambio:</span>
-                    <div className="flex items-center border border-base-300 rounded-lg overflow-hidden text-xs">
-                      <span className="px-2 py-1 bg-base-200 text-base-content/50 font-mono">$</span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="1"
-                        value={tcInput}
-                        onChange={handleTcChange}
-                        className="w-20 px-2 py-1 bg-base-100 text-base-content font-mono text-right focus:outline-none"
-                      />
-                      <span className="px-2 py-1 bg-base-200 text-base-content/50">MXN/USD</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-base-content/60 shrink-0">Tipo de cambio:</span>
+                      <div className="flex items-center border border-base-300 rounded-lg overflow-hidden text-xs">
+                        <span className="px-2 py-1 bg-base-200 text-base-content/50 font-mono">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="1"
+                          value={tcInput}
+                          onChange={handleTcChange}
+                          className="w-20 px-2 py-1 bg-base-100 text-base-content font-mono text-right focus:outline-none"
+                        />
+                        <span className="px-2 py-1 bg-base-200 text-base-content/50">MXN/USD</span>
+                      </div>
                     </div>
+                    {tcOdoo && (
+                      <p className="text-[10px] text-base-content/40 pl-1">
+                        Odoo: ${tcOdoo.toFixed(4)} · Sugerido: +$1.00
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
