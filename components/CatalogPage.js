@@ -53,10 +53,11 @@ function ProductImage({ p, href }) {
 function CartItem({ item, session, onUpdateQty, onUpdateNota, onRemove }) {
   const lineTotal = session && item.precioUSD > 0 ? item.qty * item.precioUSD : null;
 
-  const esCHN = item.sourcingJun === "CHN to MTY";
-  const secondaryStock = esCHN ? (item.stockCHN || 0) : (item.stockUSA || 0);
-  const secondaryLabel = esCHN ? "China" : "USA";
-  const secondaryFlag  = esCHN ? "🇨🇳" : "🇺🇸";
+  const esWAGO = item.marca === "WAGO";
+  const esCHN  = item.sourcingJun === "CHN to MTY";
+  const secondaryStock = esWAGO ? (item.stockWago || 0) : esCHN ? (item.stockCHN || 0) : (item.stockUSA || 0);
+  const secondaryLabel = esWAGO ? "WAGO" : esCHN ? "China" : "USA";
+  const secondaryFlag  = esWAGO ? "🇩🇪" : esCHN ? "🇨🇳" : "🇺🇸";
 
   return (
     <div className="bg-base-200 rounded-xl p-3">
@@ -496,10 +497,11 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
       : "border-t-[3px] border-t-base-300";
 
   const stockMX = p.stockMX || 0;
+  const esWAGO  = p.marca === "WAGO";
   const esCHN   = p.sourcingJun === "CHN to MTY";
-  const secondaryStock = esCHN ? (p.stockCHN || 0) : (p.stockUSA || 0);
-  const secondaryLabel = esCHN ? "China" : "USA";
-  const secondaryFlag  = esCHN ? "🇨🇳" : "🇺🇸";
+  const secondaryStock = esWAGO ? (p.stockWago || 0) : esCHN ? (p.stockCHN || 0) : (p.stockUSA || 0);
+  const secondaryLabel = esWAGO ? "WAGO" : esCHN ? "China" : "USA";
+  const secondaryFlag  = esWAGO ? "🇩🇪" : esCHN ? "🇨🇳" : "🇺🇸";
 
   const handleQtyChange = (e) => {
     const v = parseInt(e.target.value) || 1;
@@ -837,6 +839,7 @@ export default function CatalogPage() {
           stockMX:       p.stockMX    || 0,
           stockUSA:      p.stockUSA   || 0,
           stockCHN:      p.stockCHN   || 0,
+          stockWago:     p.stockWago  ?? undefined,
           sourcingJun:   p.sourcingJun || null,
         },
       ];

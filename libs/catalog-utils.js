@@ -26,6 +26,42 @@ const REGLAS_MARCA = [
   { marca: "WAGO",      regex: /^(2[2-8]\d-|2[0-9]{3}-|750|751|753|787|789|855|859)/i },
 ];
 
+// Map Odoo category name (last segment) → catalog display category
+export const WAGO_CATEGORIAS = {
+  CLEMAS:       "Terminales WAGO",
+  AUTOMATIZACION: "Automatización WAGO",
+  FERRULES:     "Ferrules WAGO",
+  FUENTES:      "Fuentes de poder WAGO",
+  HERRAMIENTAS: "Herramientas WAGO",
+  INTERFACE:    "Interfaces WAGO",
+  KITS:         "Kits WAGO",
+  MARCAJE:      "Marcaje WAGO",
+  BULKHEAD:     "Conectores pasacables WAGO",
+};
+
+export function wagoCategoria(odooCategName) {
+  const key = (odooCategName || "").toUpperCase().trim().split("/").pop().trim();
+  return WAGO_CATEGORIAS[key] || "Conectividad WAGO";
+}
+
+// Derive product family from PN prefix
+export function wagoFamilia(pn) {
+  const p = (pn || "").toUpperCase();
+  if (/^22[0-9]-/.test(p)) return "220 Series";
+  if (/^231-|^232-|^233-|^234-|^235-|^236-|^237-|^238-/.test(p)) return "Cage Clamp";
+  if (/^250-|^255-/.test(p)) return "250 Series";
+  if (/^28[0-9]-/.test(p)) return "280 Series";
+  if (/^2004-/.test(p)) return "2004 Series";
+  if (/^2[0-9]{3}-/.test(p)) return "2000 Series";
+  if (/^750-|^751-|^753-/.test(p)) return "WAGO 750 I/O";
+  if (/^787-|^789-/.test(p)) return "EPSITRON Power";
+  if (/^855-|^859-/.test(p)) return "855 Series";
+  if (/^870-/.test(p)) return "870 Series";
+  if (/^765-|^766-/.test(p)) return "765 Series";
+  if (/^8\d{3}-/.test(p)) return "8000 Series";
+  return "WAGO";
+}
+
 export function detectarMarca(pn) {
   for (const r of REGLAS_MARCA) {
     if (r.regex.test(pn)) return r.marca;
@@ -77,6 +113,42 @@ export const SUBCATEGORIAS = {
     { label: "Laser de distancia",keywords: ["laser", "distance"] },
     { label: "Array / Cortina",   keywords: ["array"] },
     { label: "Triangulación",     keywords: ["triangulation"] },
+  ],
+  "Terminales WAGO": [
+    { label: "Push-in",           keywords: ["push-in", "push in", "pluggable"] },
+    { label: "Cage Clamp",        keywords: ["cage clamp", "cage-clamp"] },
+    { label: "2 conductores",     keywords: ["2-conductor", "2 conductor"] },
+    { label: "3 conductores",     keywords: ["3-conductor", "3 conductor"] },
+    { label: "Tierra / PE",       keywords: ["ground", "pe", "tierra"] },
+    { label: "Con fusible",       keywords: ["fuse", "fused"] },
+    { label: "Con LED",           keywords: ["led"] },
+    { label: "Distribución",      keywords: ["distribution", "power"] },
+  ],
+  "Automatización WAGO": [
+    { label: "Módulo I/O",        keywords: ["i/o", "input", "output", "digital", "analog"] },
+    { label: "Bus coupler",       keywords: ["coupler", "bus"] },
+    { label: "Comunicación",      keywords: ["modbus", "profibus", "ethernet", "can", "profinet"] },
+    { label: "Relé / SSR",        keywords: ["relay", "ssr", "solid state"] },
+    { label: "Controlador",       keywords: ["controller", "plc"] },
+  ],
+  "Fuentes de poder WAGO": [
+    { label: "24 VDC",            keywords: ["24v", "24 v"] },
+    { label: "12 VDC",            keywords: ["12v", "12 v"] },
+    { label: "UPS / Respaldo",    keywords: ["ups", "backup"] },
+  ],
+  "Interfaces WAGO": [
+    { label: "Analógico",         keywords: ["analog", "4-20", "0-10"] },
+    { label: "Digital",           keywords: ["digital"] },
+    { label: "RS-232 / RS-485",   keywords: ["rs-232", "rs-485", "serial"] },
+    { label: "Relé",              keywords: ["relay"] },
+  ],
+  "Ferrules WAGO": [
+    { label: "Ferrule simple",    keywords: ["single"] },
+    { label: "Ferrule doble",     keywords: ["twin", "double"] },
+  ],
+  "Marcaje WAGO": [
+    { label: "Etiqueta",          keywords: ["marker", "label"] },
+    { label: "Portaetiqueta",     keywords:["holder", "carrier"] },
   ],
 };
 

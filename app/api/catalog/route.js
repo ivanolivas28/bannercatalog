@@ -9,6 +9,8 @@ import {
   parsearRemate,
   mergear,
   CATALOG_CONFIG,
+  wagoFamilia,
+  wagoCategoria,
 } from "@/libs/catalog-utils";
 
 export const dynamic = "force-dynamic";
@@ -115,11 +117,14 @@ export async function GET() {
       const oferta = remate.get(pn?.toUpperCase());
       const wagoData = wagoStockMap.get(pn?.toUpperCase());
 
-      // Enrich WAGO products with wagopro stock + price
+      // Enrich WAGO products with wagopro stock, price, desc, and category
       const wagoEnrich = wagoData ? {
         stockWago: wagoData.stock ?? 0,
         precioUSD: wagoData.precioVenta || precioUSD,
         marca: "WAGO",
+        desc: wagoData.desc || desc,
+        familia: wagoFamilia(pn),
+        categoria: wagoCategoria(wagoData.categoria),
       } : {};
 
       if (!oferta) {
@@ -176,8 +181,8 @@ export async function GET() {
           pn,
           desc: w.desc || pn,
           marca: "WAGO",
-          familia: "",
-          categoria: w.categoria || "WAGO",
+          familia: wagoFamilia(pn),
+          categoria: wagoCategoria(w.categoria),
           precioUSD: w.precioVenta || 0,
           stockMX: 0,
           stockUSA: 0,
