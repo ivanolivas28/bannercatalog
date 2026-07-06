@@ -117,7 +117,8 @@ export async function GET() {
       const oferta = remate.get(pn?.toUpperCase());
       const wagoData = wagoStockMap.get(pn?.toUpperCase());
 
-      // Enrich WAGO products with wagopro stock, price, desc, and category
+      // Enrich WAGO products — always set familia/categoria; add blob data if available
+      const esWagoMarca = marca === "WAGO";
       const wagoEnrich = wagoData ? {
         stockWago: wagoData.stock ?? 0,
         precioUSD: wagoData.precioVenta || precioUSD,
@@ -125,6 +126,9 @@ export async function GET() {
         desc: wagoData.desc || desc,
         familia: wagoFamilia(pn),
         categoria: wagoCategoria(wagoData.categoria),
+      } : esWagoMarca ? {
+        familia: wagoFamilia(pn),
+        categoria: "Conectividad WAGO",
       } : {};
 
       if (!oferta) {

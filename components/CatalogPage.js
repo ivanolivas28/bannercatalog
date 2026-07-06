@@ -55,7 +55,7 @@ function CartItem({ item, session, onUpdateQty, onUpdateNota, onRemove }) {
 
   const esWAGO = item.marca === "WAGO";
   const esCHN  = item.sourcingJun === "CHN to MTY";
-  const secondaryStock = esWAGO ? (item.stockWago || 0) : esCHN ? (item.stockCHN || 0) : (item.stockUSA || 0);
+  const secondaryStock = esWAGO ? (item.stockWago || item.stockUSA || 0) : esCHN ? (item.stockCHN || 0) : (item.stockUSA || 0);
   const secondaryLabel = esWAGO ? "WAGO" : esCHN ? "China" : "USA";
   const secondaryFlag  = esWAGO ? "🇲🇽" : esCHN ? "🇨🇳" : "🇺🇸";
 
@@ -499,7 +499,7 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
   const stockMX = p.stockMX || 0;
   const esWAGO  = p.marca === "WAGO";
   const esCHN   = p.sourcingJun === "CHN to MTY";
-  const secondaryStock = esWAGO ? (p.stockWago || 0) : esCHN ? (p.stockCHN || 0) : (p.stockUSA || 0);
+  const secondaryStock = esWAGO ? (p.stockWago || p.stockUSA || 0) : esCHN ? (p.stockCHN || 0) : (p.stockUSA || 0);
   const secondaryLabel = esWAGO ? "WAGO" : esCHN ? "China" : "USA";
   const secondaryFlag  = esWAGO ? "🇲🇽" : esCHN ? "🇨🇳" : "🇺🇸";
 
