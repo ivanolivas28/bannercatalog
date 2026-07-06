@@ -360,11 +360,25 @@ export async function syncCatalogToOdoo(productos) {
 // Quotations (sale.order)
 // ---------------------------------------------------------------------------
 
-export async function createOdooQuotation({ contacto, items }) {
+export async function createOdooQuotation({ contacto, items, moneda = "USD", tipoCambio = 1 }) {
   await ensureAuth();
 
   const partnerId = await findOrCreatePartner(contacto);
   if (!partnerId) throw new Error("No se pudo crear o encontrar el cliente en Odoo");
+
+  // Lookup currency_id in Odoo
+  let currencyId = false;
+  try {
+    const currencies = await callKw({
+      model: "res.currency",
+      method: "search_read",
+      args: [[["name", "=", moneda]]],
+      kwargs: { fields: ["id"], limit: 1 },
+    });
+    if (Array.isArray(currencies) && currencies.length) currencyId = currencies[0].id;
+  } catch (_) {}
+
+  const tc = moneda === "MXN" ? tipoCambio : 1;
 
   const orderLines = await Promise.all(
     items.map(async (item) => {
@@ -380,9 +394,10 @@ export async function createOdooQuotation({ contacto, items }) {
         if (Array.isArray(products) && products.length) productId = products[0].id;
       } catch (_) {}
 
+      const precioFinal = precioUSD > 0 ? +(precioUSD * tc).toFixed(2) : 0;
       const lineVals = {
         product_uom_qty: qty,
-        price_unit: precioUSD > 0 ? precioUSD : 0,
+        price_unit: precioFinal,
         name: `[${pn}] ${desc || ""}${marca && marca !== "OTRO" ? ` — ${marca}` : ""}`.trim(),
         x_studio_tiempo_de_entrega_demm: item.tiempoEntrega || "",
       };
@@ -391,10 +406,17 @@ export async function createOdooQuotation({ contacto, items }) {
     })
   );
 
+  const soVals = {
+    partner_id: partnerId,
+    order_line: orderLines,
+    note: `Portal web — ${contacto.empresa || ""} | ${moneda}${moneda === "MXN" ? ` TC:${tipoCambio}` : ""}`.trim(),
+  };
+  if (currencyId) soVals.currency_id = currencyId;
+
   const soId = await callKw({
     model: "sale.order",
     method: "create",
-    args: [{ partner_id: partnerId, order_line: orderLines, note: `Portal web — ${contacto.empresa || ""}`.trim() }],
+    args: [soVals],
   });
 
   const orders = await callKw({

@@ -151,16 +151,31 @@ function CartItem({ item, session, onUpdateQty, onRemove }) {
 
 /* ─── Quote cart side panel ─── */
 function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onSendOdoo, onClose }) {
-  const subtotal = items.reduce(
-    (s, i) => s + (i.precioUSD > 0 ? i.qty * i.precioUSD : 0),
-    0
-  );
-  const iva   = subtotal * 0.16;
-  const total = subtotal + iva;
+  const [moneda,     setMoneda]     = useState("USD");
+  const [tipoCambio, setTipoCambio] = useState(17.50);
+  const [tcInput,    setTcInput]    = useState("17.50");
+
+  const subtotalUSD = items.reduce((s, i) => s + (i.precioUSD > 0 ? i.qty * i.precioUSD : 0), 0);
+  const ivaUSD      = subtotalUSD * 0.16;
+  const totalUSD    = subtotalUSD + ivaUSD;
+
+  const tc          = moneda === "MXN" ? tipoCambio : 1;
+  const subtotal    = subtotalUSD * tc;
+  const iva         = ivaUSD * tc;
+  const total       = totalUSD * tc;
+  const sym         = moneda === "MXN" ? "$" : "$";
+  const cur         = moneda;
+
   const fmtUSD = (n) =>
     n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const totalPiezas        = items.reduce((s, i) => s + i.qty, 0);
   const hayPreciosPendientes = items.some((i) => !i.precioUSD || i.precioUSD <= 0);
+
+  const handleTcChange = (e) => {
+    setTcInput(e.target.value);
+    const v = parseFloat(e.target.value);
+    if (!isNaN(v) && v > 0) setTipoCambio(v);
+  };
 
   /* ── Guest contact form state ── */
   const [contacto,  setContacto]  = useState({ nombre: "", apellido: "", empresa: "", email: "", telefono: "" });
@@ -235,16 +250,50 @@ function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onSen
           {/* ══ LOGGED IN: totals + Excel export ══ */}
           {session ? (
             <>
-              {subtotal > 0 && (
+              {/* Currency selector + exchange rate */}
+              <div className="bg-base-100 rounded-xl p-3 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-base-content/60 shrink-0">Moneda:</span>
+                  <div className="flex rounded-lg overflow-hidden border border-base-300 text-xs font-bold">
+                    <button
+                      onClick={() => setMoneda("USD")}
+                      className={`px-3 py-1 transition-colors ${moneda === "USD" ? "bg-primary text-primary-content" : "bg-base-100 text-base-content/60 hover:bg-base-200"}`}
+                    >USD</button>
+                    <button
+                      onClick={() => setMoneda("MXN")}
+                      className={`px-3 py-1 transition-colors ${moneda === "MXN" ? "bg-primary text-primary-content" : "bg-base-100 text-base-content/60 hover:bg-base-200"}`}
+                    >MXN</button>
+                  </div>
+                </div>
+                {moneda === "MXN" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-base-content/60 shrink-0">Tipo de cambio:</span>
+                    <div className="flex items-center border border-base-300 rounded-lg overflow-hidden text-xs">
+                      <span className="px-2 py-1 bg-base-200 text-base-content/50 font-mono">$</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="1"
+                        value={tcInput}
+                        onChange={handleTcChange}
+                        className="w-20 px-2 py-1 bg-base-100 text-base-content font-mono text-right focus:outline-none"
+                      />
+                      <span className="px-2 py-1 bg-base-200 text-base-content/50">MXN/USD</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {subtotalUSD > 0 && (
                 <div className="bg-base-100 rounded-xl p-3 space-y-1.5 text-sm">
                   <div className="flex justify-between text-base-content/60">
-                    <span>Subtotal USD</span><span>${fmtUSD(subtotal)}</span>
+                    <span>Subtotal {cur}</span><span>{sym}{fmtUSD(subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-base-content/60">
-                    <span>IVA 16%</span><span>${fmtUSD(iva)}</span>
+                    <span>IVA 16%</span><span>{sym}{fmtUSD(iva)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-base-content border-t border-base-300 pt-1.5">
-                    <span>Total USD</span><span>${fmtUSD(total)}</span>
+                    <span>Total {cur}</span><span>{sym}{fmtUSD(total)}</span>
                   </div>
                 </div>
               )}
@@ -266,11 +315,11 @@ function QuoteCartPanel({ items, session, onUpdateQty, onRemove, onExport, onSen
 
               {session?.user?.isAdmin && (
                 <button
-                  onClick={onSendOdoo}
+                  onClick={() => onSendOdoo({ moneda, tipoCambio })}
                   disabled={items.length === 0}
                   className="btn btn-secondary w-full gap-2"
                 >
-                  <i className="ti ti-send text-lg" /> Mandar cotización a Odoo
+                  <i className="ti ti-send text-lg" /> Mandar cotización a Odoo ({cur})
                 </button>
               )}
 
@@ -1266,16 +1315,16 @@ export default function CatalogPage() {
           onUpdateQty={actualizarQty}
           onRemove={quitarDeCotizacion}
           onExport={() => exportarCotizacionXLSX(cotizacion)}
-          onSendOdoo={async () => {
+          onSendOdoo={async ({ moneda, tipoCambio }) => {
             try {
               const res = await fetch("/api/admin/cotizacion-odoo", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ items: cotizacion }),
+                body: JSON.stringify({ items: cotizacion, moneda, tipoCambio }),
               });
               const data = await res.json();
               if (!res.ok) throw new Error(data.error || "Error");
-              toast.success(`Cotización ${data.name} creada en Odoo`);
+              toast.success(`Cotización ${data.name} creada en Odoo (${moneda})`);
             } catch (err) {
               toast.error(err.message || "Error al enviar a Odoo");
             }

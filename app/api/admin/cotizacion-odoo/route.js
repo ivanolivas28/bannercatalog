@@ -10,12 +10,11 @@ export async function POST(req) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const { items, contacto } = await req.json();
+    const { items, contacto, moneda = "USD", tipoCambio = 1 } = await req.json();
     if (!items?.length) {
       return NextResponse.json({ error: "Sin productos" }, { status: 400 });
     }
 
-    // Use provided contacto or fall back to admin user
     const contactoFinal = contacto || {
       nombre: "EQKOR",
       apellido: "Admin",
@@ -24,7 +23,7 @@ export async function POST(req) {
       telefono: "",
     };
 
-    const result = await createOdooQuotation({ contacto: contactoFinal, items });
+    const result = await createOdooQuotation({ contacto: contactoFinal, items, moneda, tipoCambio });
     return NextResponse.json({ success: true, ...result });
   } catch (err) {
     console.error("[/api/admin/cotizacion-odoo]", err);
