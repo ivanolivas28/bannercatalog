@@ -119,6 +119,7 @@ export async function GET() {
       const wagoEnrich = wagoData ? {
         stockWago: wagoData.stock ?? 0,
         precioUSD: wagoData.precioVenta || precioUSD,
+        marca: "WAGO",
       } : {};
 
       if (!oferta) {
