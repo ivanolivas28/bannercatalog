@@ -50,9 +50,9 @@ function parseWagoHTML(html, pn) {
     if (row[0]?.trim().toUpperCase() !== pnUp) continue;
     const p = (s) => parseFloat((s || "").replace(/[$,\s]/g, "")) || null;
     const s = (s) => parseInt((s || "").replace(/[^\d]/g, "")) || 0;
-    return { pn, precioNeto: p(row[3]), stock: s(row[4]) };
+    return { pn, desc: row[1]?.trim() || "", precioNeto: p(row[3]), stock: s(row[4]) };
   }
-  return { pn, precioNeto: null, stock: null };
+  return { pn, desc: "", precioNeto: null, stock: null };
 }
 
 export async function GET(req) {
@@ -107,7 +107,7 @@ export async function GET(req) {
           const precioVenta = +(wago.precioNeto / 0.80).toFixed(4);
           await callKw({ model: "product.template", method: "write", args: [[prod.id], { standard_price: wago.precioNeto, list_price: precioVenta }], kwargs: {} });
           const catName = Array.isArray(prod.categ_id) ? prod.categ_id[1] : "WAGO";
-          blobResults[pn] = { stock: wago.stock ?? 0, precioNeto: wago.precioNeto, precioVenta, desc: prod.name, categoria: catName, ts: Date.now() };
+          blobResults[pn] = { stock: wago.stock ?? 0, precioNeto: wago.precioNeto, precioVenta, desc: wago.desc || prod.name, categoria: catName, ts: Date.now() };
           updated++;
         } else { notFound++; }
       } catch (_) { notFound++; }

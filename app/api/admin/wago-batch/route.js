@@ -67,12 +67,13 @@ function parseWagoHTML(html, pn) {
     const parseStock = (s) => parseInt((s || "").replace(/[^\d]/g, "")) || 0;
     return {
       pn,
+      desc: row[1]?.trim() || "",
       precioLista: parsePrice(row[2]),
       precioNeto: parsePrice(row[3]),
       stock: parseStock(row[4]),
     };
   }
-  return { pn, precioLista: null, precioNeto: null, stock: null };
+  return { pn, desc: "", precioLista: null, precioNeto: null, stock: null };
 }
 
 export async function GET(req) {
@@ -179,7 +180,7 @@ export async function GET(req) {
         const catName = Array.isArray(prod.categ_id) ? prod.categ_id[1] : (prod.categ_id?.name || "WAGO");
         results.updated.push({
           pn,
-          nombre: prod.name,
+          nombre: wago.desc || prod.name,
           categoria: catName,
           stockWago: wago.stock ?? 0,
           precioNeto: wago.precioNeto,
