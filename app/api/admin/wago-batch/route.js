@@ -56,7 +56,7 @@ function parseWagoHTML(html, pn) {
     const tdRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
     let td;
     while ((td = tdRe.exec(tr[1])) !== null) {
-      cells.push(td[1].replace(/<[^>]+>/g, "").trim());
+      cells.push(td[1].replace(/<[^>]+>/g, "").replace(/&amp;/g,"&").replace(/&reg;/g,"®").replace(/&trade;/g,"™").replace(/&nbsp;/g," ").replace(/&#\d+;/g,"").trim());
     }
     if (cells.length >= 5) rows.push(cells);
   }
