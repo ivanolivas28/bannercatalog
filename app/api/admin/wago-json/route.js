@@ -16,11 +16,25 @@ async function getExisting() {
 }
 
 export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const action = searchParams.get("action");
+
+  // /api/admin/wago-json?action=pns — public CORS endpoint, returns only PN list
+  if (action === "pns") {
+    const data = await getExisting();
+    return new NextResponse(JSON.stringify(Object.keys(data)), {
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "https://www.wago.com",
+        "Cache-Control": "no-store",
+      },
+    });
+  }
+
   const session = await getServerSession(authOptions);
   if (!session?.user?.isAdmin) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
-  const { searchParams } = new URL(req.url);
-  if (searchParams.get("action") !== "download") return NextResponse.json({ error: "acción inválida" }, { status: 400 });
+  if (action !== "download") return NextResponse.json({ error: "acción inválida" }, { status: 400 });
 
   const data = await getExisting();
   return new NextResponse(JSON.stringify(data, null, 2), {
