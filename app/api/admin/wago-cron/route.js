@@ -115,12 +115,16 @@ export async function GET(req) {
       try {
         const html = await wagoSearch(pn, cookieStr);
         const wago = parseWagoHTML(html, pn);
+        const catName = Array.isArray(prod.categ_id) ? prod.categ_id[1] : "WAGO";
         if (wago.precioNeto !== null) {
           const precioVenta = +(wago.precioNeto / 0.80).toFixed(4);
           await callKw({ model: "product.template", method: "write", args: [[prod.id], { standard_price: wago.precioNeto, list_price: precioVenta }], kwargs: {} });
-          const catName = Array.isArray(prod.categ_id) ? prod.categ_id[1] : "WAGO";
           blobResults[pn] = { ...(existing[pn] || {}), stock: wago.stock ?? 0, precioNeto: wago.precioNeto, precioVenta, desc: wago.desc || prod.name, categoria: catName, ts: Date.now() };
           updated++;
+        } else if (wago.desc) {
+          // Producto encontrado en wagopro pero sin precio (stock 0) — guardarlo igual para que aparezca en tienda
+          blobResults[pn] = { ...(existing[pn] || {}), stock: 0, precioNeto: null, precioVenta: existing[pn]?.precioVenta || 0, desc: wago.desc || prod.name, categoria: catName, ts: Date.now() };
+          notFound++;
         } else { notFound++; }
       } catch (_) { notFound++; }
     }
