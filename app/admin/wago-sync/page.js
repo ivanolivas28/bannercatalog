@@ -12,7 +12,10 @@ export default function WagoSyncPage() {
   const [totales, setTotales] = useState({ updated: 0, notFound: 0, errors: 0 });
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
+  const [enriching, setEnriching] = useState(false);
+  const [enrichMsg, setEnrichMsg] = useState(null);
   const fileRef = useRef(null);
+  const enrichRef = useRef(null);
 
   if (!session?.user?.isAdmin) {
     return <div className="p-8 text-error">No autorizado</div>;
@@ -163,6 +166,43 @@ export default function WagoSyncPage() {
               {uploadMsg.msg}
             </span>
           )}
+        </div>
+      </div>
+
+      {/* Enrich with image/SPU from wago-enrich.json */}
+      <div className="card bg-base-100 border border-base-300 shadow-sm p-6 mb-6">
+        <h2 className="font-semibold mb-1">Aplicar enriquecimiento (imagen + SPU)</h2>
+        <p className="text-xs text-base-content/50 mb-3">
+          Sube el archivo <code>scripts/wago-enrich.json</code> generado por el script de Node.js.
+          Solo actualiza los campos <code>imagen</code> y <code>spu</code> — no toca stock, precios ni descripciones.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <label className="btn btn-primary btn-sm gap-2 cursor-pointer">
+            <i className="ti ti-photo-up" /> Subir wago-enrich.json
+            <input ref={enrichRef} type="file" accept=".json,application/json" className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setEnriching(true); setEnrichMsg(null);
+                try {
+                  JSON.parse(await file.text());
+                  const fd = new FormData(); fd.append("file", file);
+                  const res = await fetch("/api/admin/wago-json?action=enrich", { method: "POST", body: fd });
+                  const data = await res.json();
+                  setEnrichMsg(res.ok ? { ok: true, msg: `✅ ${data.enriched} productos enriquecidos de ${data.total}` } : { ok: false, msg: `Error: ${data.error}` });
+                } catch (err) { setEnrichMsg({ ok: false, msg: `JSON inválido: ${err.message}` }); }
+                finally { setEnriching(false); if (enrichRef.current) enrichRef.current.value = ""; }
+              }}
+            />
+          </label>
+          {enriching && <span className="loading loading-spinner loading-sm self-center" />}
+          {enrichMsg && <span className={`text-sm self-center ${enrichMsg.ok ? "text-success" : "text-error"}`}>{enrichMsg.msg}</span>}
+        </div>
+        <div className="mt-3 p-3 bg-base-200 rounded text-xs font-mono text-base-content/60">
+          <div className="font-semibold mb-1">Cómo generar el archivo:</div>
+          <div>cd C:\Users\cask1\Documents\shipearapido</div>
+          <div>npm install puppeteer-core</div>
+          <div>node scripts/scrape-wago-images.js</div>
         </div>
       </div>
 

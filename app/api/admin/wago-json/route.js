@@ -51,19 +51,37 @@ export async function POST(req) {
   if (!session?.user?.isAdmin) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  if (searchParams.get("action") !== "upload") return NextResponse.json({ error: "acción inválida" }, { status: 400 });
+  const action = searchParams.get("action");
 
   try {
-    const formData = await req.formData();
-    const file = formData.get("file");
-    if (!file) return NextResponse.json({ error: "Sin archivo" }, { status: 400 });
+    if (action === "upload") {
+      // Full replace
+      const formData = await req.formData();
+      const file = formData.get("file");
+      if (!file) return NextResponse.json({ error: "Sin archivo" }, { status: 400 });
+      const parsed = JSON.parse(await file.text());
+      await put(BLOB_KEY, JSON.stringify(parsed), { access: "private", allowOverwrite: true });
+      return NextResponse.json({ ok: true, count: Object.keys(parsed).length });
+    }
 
-    const text = await file.text();
-    const parsed = JSON.parse(text);
-    const count = Object.keys(parsed).length;
+    if (action === "enrich") {
+      // Merge only imagen/spu fields from enrichment file
+      const formData = await req.formData();
+      const file = formData.get("file");
+      if (!file) return NextResponse.json({ error: "Sin archivo" }, { status: 400 });
+      const enrichment = JSON.parse(await file.text()); // { PN: { imagen, spu } }
+      const existing = await getExisting();
+      let enriched = 0;
+      for (const [pn, data] of Object.entries(enrichment)) {
+        if (!existing[pn]) existing[pn] = {};
+        if (data.imagen) { existing[pn].imagen = data.imagen; enriched++; }
+        if (data.spu)    { existing[pn].spu = data.spu; }
+      }
+      await put(BLOB_KEY, JSON.stringify(existing), { access: "private", allowOverwrite: true });
+      return NextResponse.json({ ok: true, enriched, total: Object.keys(enrichment).length });
+    }
 
-    await put(BLOB_KEY, JSON.stringify(parsed), { access: "private", allowOverwrite: true });
-    return NextResponse.json({ ok: true, count });
+    return NextResponse.json({ error: "acción inválida" }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
