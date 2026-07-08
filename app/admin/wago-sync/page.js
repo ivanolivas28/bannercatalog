@@ -34,6 +34,7 @@ export default function WagoSyncPage() {
     let offset = 0;
     const limit = 20;
     let totalProductos = null;
+    const allItems = [];
 
     addLog("Iniciando sincronización WAGO…");
 
@@ -49,6 +50,7 @@ export default function WagoSyncPage() {
         }
 
         if (totalProductos === null) totalProductos = data.totalProductos;
+        if (data.items?.length) allItems.push(...data.items);
 
         setTotales((t) => ({
           updated:  t.updated  + (data.updated  || 0),
@@ -64,13 +66,25 @@ export default function WagoSyncPage() {
         );
 
         if (data.done || !data.nextOffset) {
-          addLog("✅ Sincronización completa.", "ok");
+          addLog(`Guardando ${allItems.length} productos en catálogo…`);
+          try {
+            const fd = new FormData();
+            fd.append("items", JSON.stringify(allItems));
+            const saveRes = await fetch("/api/admin/wago-json?action=bulk-update", { method: "POST", body: fd });
+            const saveData = await saveRes.json();
+            if (saveRes.ok) {
+              addLog(`✅ Sincronización completa. Catálogo con ${saveData.total} productos totales.`, "ok");
+            } else {
+              addLog(`⚠ Odoo actualizado pero error al guardar catálogo: ${saveData.error}`, "warn");
+            }
+          } catch (saveErr) {
+            addLog(`⚠ Error al guardar catálogo: ${saveErr.message}`, "warn");
+          }
           setDone(true);
           break;
         }
 
         offset = data.nextOffset;
-        // Small pause between batches
         await new Promise((r) => setTimeout(r, 1500));
       } catch (err) {
         addLog(`Error de red: ${err.message}`, "error");

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/next-auth";
 import { ensureAuth, callKw } from "@/libs/odoo";
-import { put, list } from "@vercel/blob";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 55; // under Vercel 60s limit
@@ -191,24 +190,6 @@ export async function GET(req) {
       }
     }
 
-    // Merge batch results into wago-stock.json in Blob
-    try {
-      const BLOB_KEY = "catalog/wago-stock.json";
-      let existing = {};
-      const { blobs } = await list({ prefix: BLOB_KEY });
-      const existingBlob = blobs.find((b) => b.pathname === BLOB_KEY);
-      if (existingBlob) {
-        const r = await fetch(existingBlob.url, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` } });
-        if (r.ok) existing = await r.json();
-      }
-      for (const u of results.updated) {
-        existing[u.pn] = { ...existing[u.pn], stock: u.stockWago, precioNeto: u.precioNeto, precioVenta: u.precioVenta, desc: u.nombre, categoria: u.categoria, ts: Date.now() };
-      }
-      await put(BLOB_KEY, JSON.stringify(existing), { access: "private", allowOverwrite: true });
-    } catch (blobErr) {
-      console.warn("[wago-batch] blob save failed:", blobErr.message);
-    }
-
     return NextResponse.json({
       totalProductos,
       offset,
@@ -219,7 +200,7 @@ export async function GET(req) {
       updated: results.updated.length,
       notFound: results.notFound.length,
       errors: results.errors.length,
-      detalle: results,
+      items: results.updated,
     });
   } catch (err) {
     console.error("[/api/admin/wago-batch]", err);

@@ -85,6 +85,21 @@ export async function POST(req) {
       return NextResponse.json({ ok: true, enriched, total: Object.keys(enrichment).length });
     }
 
+    if (action === "bulk-update") {
+      // Merge sync results (array of {pn, stockWago, precioNeto, precioVenta, nombre, categoria}) into blob
+      const formData = await req.formData();
+      const raw = formData.get("items");
+      if (!raw) return NextResponse.json({ error: "Sin datos" }, { status: 400 });
+      const items = JSON.parse(raw);
+      const existing = await getExisting();
+      const ts = Date.now();
+      for (const u of items) {
+        existing[u.pn] = { ...(existing[u.pn] || {}), stock: u.stockWago, precioNeto: u.precioNeto, precioVenta: u.precioVenta, desc: u.nombre, categoria: u.categoria, ts };
+      }
+      await put(BLOB_KEY, JSON.stringify(existing), { access: "private", allowOverwrite: true });
+      return NextResponse.json({ ok: true, saved: items.length, total: Object.keys(existing).length });
+    }
+
     return NextResponse.json({ error: "acción inválida" }, { status: 400 });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 400 });
