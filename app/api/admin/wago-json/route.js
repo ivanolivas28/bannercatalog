@@ -47,10 +47,14 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.isAdmin) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-
   const { searchParams } = new URL(req.url);
+  const secret = searchParams.get("secret");
+  const validSecret = secret && secret === process.env.CRON_SECRET;
+
+  if (!validSecret) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.isAdmin) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
   const action = searchParams.get("action");
 
   try {
