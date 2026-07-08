@@ -92,6 +92,18 @@ export async function GET(req) {
         .catch(() => {}); // fire and forget
     }
 
+    // Load existing blob first so we can preserve manually added fields
+    const BLOB_KEY = "catalog/wago-stock.json";
+    let existing = {};
+    try {
+      const { blobs } = await list({ prefix: BLOB_KEY });
+      const existingBlob = blobs.find((b) => b.pathname === BLOB_KEY);
+      if (existingBlob) {
+        const r = await fetch(existingBlob.url, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` } });
+        if (r.ok) existing = await r.json();
+      }
+    } catch (_) {}
+
     const cookieStr = await wagoLogin();
     let updated = 0, notFound = 0;
     const blobResults = {};
@@ -107,7 +119,7 @@ export async function GET(req) {
           const precioVenta = +(wago.precioNeto / 0.80).toFixed(4);
           await callKw({ model: "product.template", method: "write", args: [[prod.id], { standard_price: wago.precioNeto, list_price: precioVenta }], kwargs: {} });
           const catName = Array.isArray(prod.categ_id) ? prod.categ_id[1] : "WAGO";
-          blobResults[pn] = { stock: wago.stock ?? 0, precioNeto: wago.precioNeto, precioVenta, desc: wago.desc || prod.name, categoria: catName, ts: Date.now() };
+          blobResults[pn] = { ...(existing[pn] || {}), stock: wago.stock ?? 0, precioNeto: wago.precioNeto, precioVenta, desc: wago.desc || prod.name, categoria: catName, ts: Date.now() };
           updated++;
         } else { notFound++; }
       } catch (_) { notFound++; }
@@ -115,14 +127,6 @@ export async function GET(req) {
 
     // Merge into wago-stock.json in Blob
     try {
-      const BLOB_KEY = "catalog/wago-stock.json";
-      let existing = {};
-      const { blobs } = await list({ prefix: BLOB_KEY });
-      const existingBlob = blobs.find((b) => b.pathname === BLOB_KEY);
-      if (existingBlob) {
-        const r = await fetch(existingBlob.url, { headers: { Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` } });
-        if (r.ok) existing = await r.json();
-      }
       Object.assign(existing, blobResults);
       await put(BLOB_KEY, JSON.stringify(existing), { access: "private", allowOverwrite: true });
     } catch (blobErr) {

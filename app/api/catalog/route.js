@@ -126,6 +126,8 @@ export async function GET() {
         desc: wagoData.desc || desc,
         familia: wagoFamilia(pn),
         categoria: wagoCategoria(wagoData.categoria),
+        ...(wagoData.imagen ? { imagen: wagoData.imagen } : {}),
+        ...(wagoData.spu    ? { spu: wagoData.spu }       : {}),
       } : esWagoMarca ? {
         familia: wagoFamilia(pn),
         categoria: "Conectividad WAGO",
@@ -193,8 +195,9 @@ export async function GET() {
           stockCHN: 0,
           stockWago: w.stock ?? 0,
           leadTimeBanner: 0,
-          imagen: null,
-          urlProducto: null,
+          imagen: w.imagen || null,
+          urlProducto: w.urlProducto || null,
+          spu: w.spu || null,
           sourcingJun: null,
         });
       }

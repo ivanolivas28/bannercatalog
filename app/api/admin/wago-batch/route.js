@@ -202,7 +202,7 @@ export async function GET(req) {
         if (r.ok) existing = await r.json();
       }
       for (const u of results.updated) {
-        existing[u.pn] = { stock: u.stockWago, precioNeto: u.precioNeto, precioVenta: u.precioVenta, desc: u.nombre, categoria: u.categoria, ts: Date.now() };
+        existing[u.pn] = { ...existing[u.pn], stock: u.stockWago, precioNeto: u.precioNeto, precioVenta: u.precioVenta, desc: u.nombre, categoria: u.categoria, ts: Date.now() };
       }
       await put(BLOB_KEY, JSON.stringify(existing), { access: "private", allowOverwrite: true });
     } catch (blobErr) {

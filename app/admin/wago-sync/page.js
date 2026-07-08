@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -10,6 +10,9 @@ export default function WagoSyncPage() {
   const [log, setLog] = useState([]);
   const [done, setDone] = useState(false);
   const [totales, setTotales] = useState({ updated: 0, notFound: 0, errors: 0 });
+  const [uploading, setUploading] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState(null);
+  const fileRef = useRef(null);
 
   if (!session?.user?.isAdmin) {
     return <div className="p-8 text-error">No autorizado</div>;
@@ -108,6 +111,59 @@ export default function WagoSyncPage() {
         <p className="text-xs text-base-content/40">
           Procesa ~20 productos cada 40s. Actualiza stock, precio venta (costo/0.80) y guarda en catálogo. ~345 productos = ~8 min.
         </p>
+      </div>
+
+      {/* JSON manual editor section */}
+      <div className="card bg-base-100 border border-base-300 shadow-sm p-6 mb-6">
+        <h2 className="font-semibold mb-1">Editar wago-stock.json</h2>
+        <p className="text-xs text-base-content/50 mb-4">
+          Descarga el JSON, añade campos <code>imagen</code> y <code>spu</code> por PN, y vuelve a subir.
+          Los campos auto-sync (stock, precio, desc, categoria) se preservan en la próxima sincronización.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <a
+            href="/api/admin/wago-json?action=download"
+            download="wago-stock.json"
+            className="btn btn-outline btn-sm gap-2"
+          >
+            <i className="ti ti-download" /> Descargar JSON
+          </a>
+          <label className="btn btn-outline btn-sm gap-2 cursor-pointer">
+            <i className="ti ti-upload" /> Subir JSON
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploading(true);
+                setUploadMsg(null);
+                try {
+                  const text = await file.text();
+                  JSON.parse(text); // validate
+                  const fd = new FormData();
+                  fd.append("file", file);
+                  const res = await fetch("/api/admin/wago-json?action=upload", { method: "POST", body: fd });
+                  const data = await res.json();
+                  setUploadMsg(res.ok ? { ok: true, msg: `✅ Guardado: ${data.count} productos` } : { ok: false, msg: `Error: ${data.error}` });
+                } catch (err) {
+                  setUploadMsg({ ok: false, msg: `JSON inválido: ${err.message}` });
+                } finally {
+                  setUploading(false);
+                  if (fileRef.current) fileRef.current.value = "";
+                }
+              }}
+            />
+          </label>
+          {uploading && <span className="loading loading-spinner loading-sm self-center" />}
+          {uploadMsg && (
+            <span className={`text-sm self-center ${uploadMsg.ok ? "text-success" : "text-error"}`}>
+              {uploadMsg.msg}
+            </span>
+          )}
+        </div>
       </div>
 
       {log.length > 0 && (

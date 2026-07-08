@@ -553,6 +553,11 @@ function ProductCard({ p, session, onCotizar, onAgregar, cartQty, fmtPrecio }) {
                   {secondaryFlag} {secondaryStock} {secondaryLabel}
                 </span>
               )}
+              {p.spu && (
+                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-base-content/50 bg-base-200 px-1.5 py-0.5 rounded">
+                  Mín. {p.spu} pz
+                </span>
+              )}
               {stockMX === 0 && secondaryStock === 0 && (
                 <span className="text-[10px] text-base-content/30">
                   {entrega.tipo === "pedido" ? "Bajo pedido" : "Consultar"}
