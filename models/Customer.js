@@ -3,6 +3,7 @@ import toJSON from "./plugins/toJSON";
 
 const customerSchema = mongoose.Schema(
   {
+    // Original fields
     nombre: {
       type: String,
       required: true,
@@ -20,19 +21,16 @@ const customerSchema = mongoose.Schema(
     },
     email: {
       type: String,
-      required: true,
-      unique: true,
       trim: true,
       lowercase: true,
     },
     whatsapp: {
       type: String,
-      required: true,
       trim: true,
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "active", "inactive"],
       default: "pending",
     },
     approvedAt: {
@@ -47,7 +45,7 @@ const customerSchema = mongoose.Schema(
     },
     password: {
       type: String,
-      private: true, // excluded from toJSON
+      private: true,
       default: null,
     },
     loginToken: {
@@ -62,6 +60,65 @@ const customerSchema = mongoose.Schema(
       type: String,
       enum: ["USD", "MXN"],
       default: "USD",
+    },
+
+    // Odoo integration fields
+    odooPartnerId: {
+      type: Number,
+      index: true,
+    },
+    sector: {
+      type: String,
+      trim: true,
+    },
+    ciudad: {
+      type: String,
+      trim: true,
+    },
+    pais: {
+      type: String,
+      trim: true,
+    },
+
+    // Purchase history (for RFM analysis)
+    totalSpent: {
+      type: Number,
+      default: 0,
+    },
+    quotationCount: {
+      type: Number,
+      default: 0,
+    },
+    orderCount: {
+      type: Number,
+      default: 0,
+    },
+    lastQuotationDate: {
+      type: Date,
+      default: null,
+    },
+    lastOrderDate: {
+      type: Date,
+      default: null,
+    },
+
+    // RFM Score
+    rfmScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    segment: {
+      type: String,
+      enum: ["vip_active", "active", "at_risk", "dormant", "new", "prospect"],
+      default: "prospect",
+    },
+
+    // Sync tracking
+    lastSyncDate: {
+      type: Date,
+      default: null,
     },
   },
   {

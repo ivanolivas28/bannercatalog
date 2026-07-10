@@ -435,3 +435,177 @@ export async function createOdooQuotation({ contacto, items, moneda = "USD", tip
   const name = (Array.isArray(orders) && orders[0]?.name) ? orders[0].name : `SO-${soId}`;
   return { id: soId, name };
 }
+
+// ---------------------------------------------------------------------------
+// Sales Tracker - Fetch customers with purchase history
+// ---------------------------------------------------------------------------
+
+export async function fetchCustomersWithHistory(limit = 100, offset = 0) {
+  await ensureAuth();
+
+  const customers = await callKw({
+    model: "res.partner",
+    method: "search_read",
+    args: [
+      [["customer_rank", ">", 0]],
+    ],
+    kwargs: {
+      fields: [
+        "id",
+        "name",
+        "email",
+        "phone",
+        "country_id",
+        "state_id",
+        "industry_id",
+        "last_time_entries_checked",
+      ],
+      limit,
+      offset,
+      order: "id DESC",
+    },
+  });
+
+  return customers || [];
+}
+
+export async function fetchCustomerOrderHistory(customerId, limit = 50) {
+  await ensureAuth();
+
+  const orders = await callKw({
+    model: "sale.order",
+    method: "search_read",
+    args: [
+      [["partner_id", "=", customerId], ["state", "in", ["sale", "done"]]],
+    ],
+    kwargs: {
+      fields: [
+        "id",
+        "name",
+        "date_order",
+        "amount_total",
+        "currency_id",
+        "state",
+      ],
+      limit,
+      order: "date_order DESC",
+    },
+  });
+
+  return orders || [];
+}
+
+export async function fetchOpenQuotations(limit = 100, offset = 0) {
+  await ensureAuth();
+
+  const quotations = await callKw({
+    model: "sale.order",
+    method: "search_read",
+    args: [
+      [["state", "=", "draft"]],
+    ],
+    kwargs: {
+      fields: [
+        "id",
+        "name",
+        "partner_id",
+        "date_order",
+        "amount_total",
+        "validity_date",
+        "create_date",
+        "write_date",
+      ],
+      limit,
+      offset,
+      order: "write_date DESC",
+    },
+  });
+
+  return quotations || [];
+}
+
+export async function fetchCustomerActivities(customerId, limit = 20) {
+  await ensureAuth();
+
+  const activities = await callKw({
+    model: "mail.activity",
+    method: "search_read",
+    args: [
+      [["res_id", "=", customerId], ["res_model", "=", "res.partner"]],
+    ],
+    kwargs: {
+      fields: [
+        "id",
+        "activity_type_id",
+        "date_deadline",
+        "summary",
+        "state",
+        "done",
+      ],
+      limit,
+      order: "date_deadline DESC",
+    },
+  });
+
+  return activities || [];
+}
+
+export async function createActivity({
+  customerId,
+  activityType = "call",
+  dateDeadline,
+  summary,
+}) {
+  await ensureAuth();
+
+  let typeId = false;
+  const types = await callKw({
+    model: "mail.activity.type",
+    method: "search_read",
+    args: [
+      [["name", "=", activityType === "call" ? "Call" : "Email"]],
+    ],
+    kwargs: { fields: ["id"], limit: 1 },
+  });
+
+  if (Array.isArray(types) && types.length) {
+    typeId = types[0].id;
+  }
+
+  const activityId = await callKw({
+    model: "mail.activity",
+    method: "create",
+    args: [
+      {
+        res_model: "res.partner",
+        res_id: customerId,
+        activity_type_id: typeId || false,
+        date_deadline: dateDeadline,
+        summary: summary || "",
+      },
+    ],
+  });
+
+  return activityId;
+}
+
+export async function fetchAllCustomers() {
+  await ensureAuth();
+
+  let allCustomers = [];
+  let offset = 0;
+  const limit = 500;
+  let hasMore = true;
+
+  while (hasMore) {
+    const batch = await fetchCustomersWithHistory(limit, offset);
+    if (!batch || batch.length === 0) {
+      hasMore = false;
+    } else {
+      allCustomers = allCustomers.concat(batch);
+      offset += limit;
+    }
+  }
+
+  return allCustomers;
+}
