@@ -19,6 +19,10 @@ ODOO_API_KEY=tu_api_key_opcional
 # MongoDB
 MONGODB_URI=mongodb+srv://usuario:password@cluster.mongodb.net/bannercatalog
 
+# Google Sheets Integration
+GOOGLE_SERVICE_ACCOUNT_KEY={"type":"service_account","project_id":"...","private_key":"...","client_email":"..."}
+GOOGLE_DRIVE_FOLDER_ID=1HUzw2EX6MSleq1pVyrucKSUd1c-fzu7D
+
 # Email Marketing (Brevo)
 BREVO_API_KEY=tu_api_key_brevo
 BREVO_SENDER_EMAIL=noreply@tuempresa.com

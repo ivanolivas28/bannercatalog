@@ -4,10 +4,16 @@ import Customer from "@/models/Customer";
 import Task from "@/models/Task";
 import OdooSync from "@/models/OdooSync";
 import {
-  fetchAllCustomers,
+  fetchAllContactsPaginated,
+  fetchSalesOrdersAboveThreshold,
   fetchCustomerOrderHistory,
-  fetchOpenQuotations,
 } from "@/libs/odoo";
+import {
+  createOrGetSheet,
+  writeContactsToSheet,
+  writeSalesOrdersToSheet,
+  writeContextToSheet,
+} from "@/libs/google-sheets";
 import { analyzeAllCustomers, sortByPriority } from "@/libs/rfm-analysis";
 import { generateAllTasks } from "@/libs/task-generator";
 import connectMongo from "@/libs/mongo";
@@ -16,11 +22,12 @@ import connectMongo from "@/libs/mongo";
  * POST /api/tracker/sync
  *
  * Synchronizes data from Odoo:
- * 1. Fetches all customers
- * 2. Fetches their order history
- * 3. Analyzes with RFM
- * 4. Generates tasks
- * 5. Saves to MongoDB
+ * 1. Fetches ALL contacts from Odoo
+ * 2. Fetches sales orders/quotations > 1k USD or 10k MXN
+ * 3. Creates/updates Google Sheet with all data
+ * 4. Analyzes with RFM
+ * 5. Generates tasks
+ * 6. Saves to MongoDB
  */
 export async function POST(req) {
   try {
@@ -28,33 +35,67 @@ export async function POST(req) {
 
     // Create sync log entry
     const syncLog = await OdooSync.create({
-      syncType: "incremental",
+      syncType: "full",
       status: "in_progress",
     });
 
-    console.log(`[SYNC] Starting sync ${syncLog._id}`);
+    console.log(`[SYNC] Starting full sync ${syncLog._id}`);
 
-    // 1. Fetch all customers from Odoo
-    console.log("[SYNC] Fetching customers from Odoo...");
-    const odooCustomers = await fetchAllCustomers();
-    console.log(`[SYNC] Fetched ${odooCustomers.length} customers`);
+    // 1. Fetch ALL contacts from Odoo
+    console.log("[SYNC] Fetching ALL contacts from Odoo...");
+    const allContacts = await fetchAllContactsPaginated();
+    console.log(`[SYNC] Fetched ${allContacts.length} contacts`);
 
-    if (!odooCustomers || odooCustomers.length === 0) {
-      throw new Error("No customers found in Odoo");
+    if (!allContacts || allContacts.length === 0) {
+      throw new Error("No contacts found in Odoo");
     }
 
-    // 2. Enrich with order history and sync to MongoDB
-    console.log("[SYNC] Enriching with order history...");
+    // 2. Fetch sales orders and quotations above threshold
+    console.log("[SYNC] Fetching sales orders/quotations > 1k USD or 10k MXN...");
+    const { confirmedOrders, quotations } = await fetchSalesOrdersAboveThreshold(1000);
+    console.log(
+      `[SYNC] Fetched ${confirmedOrders.length} confirmed orders and ${quotations.length} quotations`
+    );
+
+    // 3. Create or get Google Sheet
+    console.log("[SYNC] Creating/updating Google Sheet...");
+    const sheetInfo = await createOrGetSheet("Odoo Sales Tracker - Análisis IA");
+    console.log(`[SYNC] Sheet ${sheetInfo.created ? "created" : "found"}: ${sheetInfo.url}`);
+
+    // 4. Write data to Google Sheet
+    console.log("[SYNC] Writing contacts to sheet...");
+    await writeContactsToSheet(sheetInfo.id, allContacts);
+
+    console.log("[SYNC] Writing confirmed orders to sheet...");
+    await writeSalesOrdersToSheet(sheetInfo.id, confirmedOrders, "Órdenes");
+
+    console.log("[SYNC] Writing quotations to sheet...");
+    await writeSalesOrdersToSheet(sheetInfo.id, quotations, "Cotizaciones");
+
+    // 5. Write context for Claude
+    console.log("[SYNC] Writing context information...");
+    await writeContextToSheet(sheetInfo.id, {
+      contactsCount: allContacts.length,
+      ordersCount: confirmedOrders.length,
+      quotationsCount: quotations.length,
+    });
+
+    // 6. Sync customer data to MongoDB (from contacts)
+    console.log("[SYNC] Syncing customer data to MongoDB...");
     const enrichedCustomers = [];
     let newCount = 0;
     let updatedCount = 0;
 
-    for (const odooCustomer of odooCustomers) {
+    for (const contact of allContacts) {
       try {
-        // Fetch order history
-        const orders = await fetchCustomerOrderHistory(odooCustomer.id, 50);
+        // Only sync actual customers (customer_rank > 0)
+        if (!contact.customer_rank || contact.customer_rank === 0) {
+          continue;
+        }
 
-        // Calculate totals
+        // Fetch order history
+        const orders = await fetchCustomerOrderHistory(contact.id, 50);
+
         let totalSpent = 0;
         let lastOrderDate = null;
 
@@ -65,19 +106,15 @@ export async function POST(req) {
           }
         }
 
-        // Count quotations
-        const quotationCount = orders.length;
-
-        // Prepare customer data
         const customerData = {
-          odooPartnerId: odooCustomer.id,
-          nombre: (odooCustomer.name || "").split(" ")[0] || "N/A",
-          empresa: odooCustomer.name || "N/A",
-          email: odooCustomer.email || "",
-          whatsapp: odooCustomer.phone || "",
-          sector: odooCustomer.industry_id ? odooCustomer.industry_id[1] : "",
+          odooPartnerId: contact.id,
+          nombre: (contact.name || "").split(" ")[0] || "N/A",
+          empresa: contact.name || "N/A",
+          email: contact.email || "",
+          whatsapp: contact.phone || contact.mobile || "",
+          sector: contact.industry_id ? contact.industry_id[1] : "",
           totalSpent,
-          quotationCount,
+          quotationCount: orders.length,
           orderCount: orders.length,
           lastOrderDate: lastOrderDate || null,
           lastQuotationDate: lastOrderDate || null,
@@ -85,9 +122,8 @@ export async function POST(req) {
           status: "active",
         };
 
-        // Upsert in MongoDB
         const result = await Customer.findOneAndUpdate(
-          { odooPartnerId: odooCustomer.id },
+          { odooPartnerId: contact.id },
           customerData,
           { upsert: true, new: true }
         );
@@ -97,18 +133,13 @@ export async function POST(req) {
 
         enrichedCustomers.push(result.toObject());
       } catch (err) {
-        console.error(
-          `[SYNC] Error enriching customer ${odooCustomer.id}:`,
-          err.message
-        );
+        console.error(`[SYNC] Error enriching customer ${contact.id}:`, err.message);
       }
     }
 
-    console.log(
-      `[SYNC] Synced ${newCount} new, ${updatedCount} updated customers`
-    );
+    console.log(`[SYNC] Synced ${newCount} new, ${updatedCount} updated customers`);
 
-    // 3. Analyze with RFM
+    // 7. Analyze with RFM
     console.log("[SYNC] Running RFM analysis...");
     const analyzed = analyzeAllCustomers(enrichedCustomers);
     const sorted = sortByPriority(analyzed);
@@ -120,7 +151,7 @@ export async function POST(req) {
       );
     });
 
-    // 4. Generate tasks
+    // 8. Generate tasks
     console.log("[SYNC] Generating tasks...");
     const allTasks = generateAllTasks(sorted, {
       daysAhead: 7,
@@ -129,7 +160,7 @@ export async function POST(req) {
 
     console.log(`[SYNC] Generated ${allTasks.length} tasks`);
 
-    // 5. Save tasks to MongoDB
+    // 9. Save tasks to MongoDB
     let tasksCreated = 0;
     for (const taskData of allTasks) {
       try {
@@ -152,12 +183,7 @@ export async function POST(req) {
       }
     }
 
-    // 6. Fetch open quotations for context
-    console.log("[SYNC] Fetching open quotations...");
-    const openQuotations = await fetchOpenQuotations(100, 0);
-    console.log(`[SYNC] Found ${openQuotations.length} open quotations`);
-
-    // Update sync log
+    // 10. Update sync log
     await OdooSync.findByIdAndUpdate(syncLog._id, {
       status: "completed",
       completedAt: new Date(),
@@ -169,20 +195,23 @@ export async function POST(req) {
         lastSyncDate: new Date(),
       },
       quotationsSync: {
-        count: openQuotations.length,
+        count: quotations.length,
       },
-      notes: `${tasksCreated} tasks created`,
+      notes: `${tasksCreated} tasks created. Google Sheet: ${sheetInfo.url}`,
     });
 
     return NextResponse.json({
       success: true,
       message: "Sync completed successfully",
       data: {
+        allContactsCount: allContacts.length,
         customersCount: enrichedCustomers.length,
         newCustomers: newCount,
         updatedCustomers: updatedCount,
+        confirmedOrders: confirmedOrders.length,
+        quotations: quotations.length,
         tasksCreated,
-        openQuotations: openQuotations.length,
+        googleSheetUrl: sheetInfo.url,
         syncId: syncLog._id,
       },
     });
