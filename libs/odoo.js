@@ -609,3 +609,138 @@ export async function fetchAllCustomers() {
 
   return allCustomers;
 }
+
+// ---------------------------------------------------------------------------
+// Sales Tracker - Fetch ALL contacts (from Contacts module)
+// ---------------------------------------------------------------------------
+
+export async function fetchAllContacts(limit = 500, offset = 0) {
+  await ensureAuth();
+
+  const contacts = await callKw({
+    model: "res.partner",
+    method: "search_read",
+    args: [
+      [["type", "=", "contact"]], // Only contact type, not companies
+    ],
+    kwargs: {
+      fields: [
+        "id",
+        "name",
+        "email",
+        "phone",
+        "mobile",
+        "country_id",
+        "state_id",
+        "city",
+        "street",
+        "industry_id",
+        "parent_id",
+        "customer_rank",
+        "supplier_rank",
+        "create_date",
+        "write_date",
+      ],
+      limit,
+      offset,
+      order: "write_date DESC",
+    },
+  });
+
+  return contacts || [];
+}
+
+export async function fetchAllContactsPaginated() {
+  await ensureAuth();
+
+  let allContacts = [];
+  let offset = 0;
+  const limit = 500;
+  let hasMore = true;
+
+  while (hasMore) {
+    const batch = await fetchAllContacts(limit, offset);
+    if (!batch || batch.length === 0) {
+      hasMore = false;
+    } else {
+      allContacts = allContacts.concat(batch);
+      offset += limit;
+    }
+  }
+
+  return allContacts;
+}
+
+// ---------------------------------------------------------------------------
+// Sales Tracker - Fetch sales orders/quotations above threshold
+// ---------------------------------------------------------------------------
+
+export async function fetchSalesOrdersAboveThreshold(minUSD = 1000) {
+  await ensureAuth();
+
+  // Get MXN exchange rate
+  const { mxnPerUsd } = await getMXNRate();
+  const minMXN = 10000; // 10k MXN threshold
+
+  // Calculate minimum in both currencies
+  const minThreshold = Math.min(minUSD, minMXN / (mxnPerUsd || 20));
+
+  // Fetch both confirmed orders and quotations (draft)
+  const [orders, quotations] = await Promise.all([
+    callKw({
+      model: "sale.order",
+      method: "search_read",
+      args: [
+        [["state", "in", ["sale", "done"]], ["amount_total", ">=", minThreshold]],
+      ],
+      kwargs: {
+        fields: [
+          "id",
+          "name",
+          "partner_id",
+          "date_order",
+          "amount_total",
+          "amount_untaxed",
+          "currency_id",
+          "state",
+          "order_line",
+          "validity_date",
+          "create_date",
+          "write_date",
+        ],
+        order: "date_order DESC",
+        limit: 10000,
+      },
+    }),
+    callKw({
+      model: "sale.order",
+      method: "search_read",
+      args: [
+        [["state", "=", "draft"], ["amount_total", ">=", minThreshold]],
+      ],
+      kwargs: {
+        fields: [
+          "id",
+          "name",
+          "partner_id",
+          "date_order",
+          "amount_total",
+          "amount_untaxed",
+          "currency_id",
+          "state",
+          "order_line",
+          "validity_date",
+          "create_date",
+          "write_date",
+        ],
+        order: "write_date DESC",
+        limit: 10000,
+      },
+    }),
+  ]);
+
+  return {
+    confirmedOrders: orders || [],
+    quotations: quotations || [],
+  };
+}
