@@ -15,26 +15,27 @@ export function exportarCotizacionXLSX(items) {
   const fmt   = (n) => parseFloat(n.toFixed(2));
 
   const filas = [
-    [empresa, "", "", "", "", ""],
-    [`Cotización  ·  ${fecha}`, "", "", "", "", ""],
-    ["", "", "", "", "", ""],
-    ["CANT.", "PARTE (N/P)", "DESCRIPCIÓN", "MARCA", "P. UNIT. USD", "TOTAL USD"],
+    [empresa, "", "", "", "", "", ""],
+    [`Cotización  ·  ${fecha}`, "", "", "", "", "", ""],
+    ["", "", "", "", "", "", ""],
+    ["CANT.", "PARTE (N/P)", "DESCRIPCIÓN", "MARCA", "TIEMPO ENTREGA", "P. UNIT. USD", "TOTAL USD"],
     ...items.map((i) => [
       i.qty,
       i.pn,
       i.desc || i.pn,
       i.marca || "",
+      i.tiempoEntrega || "",
       i.precioUSD > 0 ? i.precioUSD : "Cotizar",
       i.precioUSD > 0 ? fmt(i.qty * i.precioUSD) : "Cotizar",
     ]),
-    ["", "", "", "", "", ""],
-    ["", "", "", "", "SUBTOTAL USD:", subtotal > 0 ? fmt(subtotal) : "—"],
-    ["", "", "", "", "IVA 16%:", iva > 0 ? fmt(iva) : "—"],
-    ["", "", "", "", "TOTAL USD:", total > 0 ? fmt(total) : "—"],
-    ["", "", "", "", "", ""],
+    ["", "", "", "", "", "", ""],
+    ["", "", "", "", "", "SUBTOTAL USD:", subtotal > 0 ? fmt(subtotal) : "—"],
+    ["", "", "", "", "", "IVA 16%:", iva > 0 ? fmt(iva) : "—"],
+    ["", "", "", "", "", "TOTAL USD:", total > 0 ? fmt(total) : "—"],
+    ["", "", "", "", "", "", ""],
     [
       "* Precios en USD antes de IVA. 'Cotizar' = precio bajo consulta. Vigencia: 48 h.",
-      "", "", "", "", "",
+      "", "", "", "", "", "",
     ],
   ];
 
@@ -45,13 +46,14 @@ export function exportarCotizacionXLSX(items) {
     { wch: 24 },
     { wch: 50 },
     { wch: 12 },
+    { wch: 26 },
     { wch: 18 },
     { wch: 16 },
   ];
 
   // Bold header row (row index 3 = 0-based)
   const headerRow = 3;
-  ["A", "B", "C", "D", "E", "F"].forEach((col) => {
+  ["A", "B", "C", "D", "E", "F", "G"].forEach((col) => {
     const cell = ws[`${col}${headerRow + 1}`];
     if (cell) cell.s = { font: { bold: true } };
   });
