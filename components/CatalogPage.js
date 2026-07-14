@@ -845,6 +845,7 @@ export default function CatalogPage() {
           precioContado: p.precioContado || null,
           precioCredito: p.precioCredito || null,
           tiempoEntrega: getEntregaInfo(p).tiempo || "",
+          imagen:        p.imagen || null,
           stockMX:       p.stockMX    || 0,
           stockUSA:      p.stockUSA   || 0,
           stockCHN:      p.stockCHN   || 0,
@@ -1363,7 +1364,7 @@ export default function CatalogPage() {
           onUpdateQty={actualizarQty}
           onUpdateNota={actualizarNota}
           onRemove={quitarDeCotizacion}
-          onExport={() => exportarCotizacionXLSX(cotizacion)}
+          onExport={() => exportarCotizacionXLSX(cotizacion).catch((e) => console.error("Export error:", e))}
           onSendOdoo={async ({ moneda, tipoCambio }) => {
             try {
               const res = await fetch("/api/admin/cotizacion-odoo", {
