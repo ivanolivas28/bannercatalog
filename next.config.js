@@ -4,7 +4,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    serverComponentsExternalPackages: ["@vercel/blob"],
+    serverComponentsExternalPackages: ["@vercel/blob", "exceljs"],
   },
   images: {
     domains: [
