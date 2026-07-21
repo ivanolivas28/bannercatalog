@@ -1,7 +1,7 @@
 // Catalog utility functions — ported from the static site
 
 export const CATALOG_CONFIG = {
-  WHATSAPP: "5261400000000",
+  WHATSAPP: "526141980695",
   TU_NOMBRE: "EQKOR",
   DOMINIO: process.env.NEXT_PUBLIC_DOMINIO || "https://TU-DOMINIO.com",
   SOURCING_EXTRA_DIAS: 15,

@@ -1309,8 +1309,8 @@ export default function CatalogPage() {
               </p>
               <div className="flex flex-col gap-3">
                 {[
-                  { icon: "ti-brand-whatsapp", text: "+52 614 XXX XXXX", href: `https://wa.me/${CATALOG_CONFIG.WHATSAPP}` },
-                  { icon: "ti-mail",           text: "ventas@TU-DOMINIO.com", href: "mailto:ventas@TU-DOMINIO.com" },
+                  { icon: "ti-brand-whatsapp", text: "+52 614 198 0695", href: `https://wa.me/${CATALOG_CONFIG.WHATSAPP}` },
+                  { icon: "ti-mail",           text: "ventas@eqkor.mx", href: "mailto:ventas@eqkor.mx" },
                   { icon: "ti-map-pin",        text: "Chihuahua, Chih. México", href: null },
                 ].map((c) =>
                   c.href ? (
