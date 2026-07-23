@@ -11,7 +11,7 @@ export const CATALOG_CONFIG = {
   LOCAL_CHN:      "/data/NFG - Inventario General.csv",
   LOCAL_BANNER:   "/data/banner_pricelist_download_20260505.txt",
   LOCAL_SOURCING: "/data/Sourcing Item Jun 26.csv",
-  // cPanel URLs — archivos en eqkor.mx/catalog-data/
+  // cPanel URLs — archivos en public_html/catalog-data/
   CPANEL_BASE:    "https://eqkor.mx/catalog-data",
   SHEET_MX:       "https://eqkor.mx/catalog-data/TFG%20-%20Inventario%20General%20(1).csv",
   SHEET_USA:      "https://eqkor.mx/catalog-data/MFG%20-%20Inventario%20General.csv",
