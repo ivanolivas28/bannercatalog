@@ -72,25 +72,8 @@ export async function GET() {
 
     if (isLocal) {
       [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await cargarLocal().then(r => r);
-    } else if (tieneBlob) {
-      const [mxR, usaR, chnR, bannerR, sourcingR, remateR, wagoR] = await Promise.all([
-        fetchText(blobUrl("mx.csv")),
-        fetchText(blobUrl("usa.csv")),
-        fetchText(blobUrl("chn.csv")),
-        fetchText(blobUrl("banner.xlsx")),
-        fetchText(blobUrl("sourcing.xlsx")),
-        fetchText(blobUrl("remate.xlsx")).catch(() => ""),
-        fetchText(blobUrl("wago-stock.json")).catch(() => ""),
-      ]);
-      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt, remateTxt] = [mxR, usaR, chnR, bannerR, sourcingR, remateR];
-      if (wagoR) {
-        try {
-          const wagoJson = JSON.parse(wagoR);
-          wagoStockMap = new Map(Object.entries(wagoJson).map(([pn, v]) => [pn.toUpperCase(), v]));
-        } catch (_) {}
-      }
     } else {
-      // Vercel Blob no disponible — leer desde cPanel
+      // Leer desde cPanel primero; si Blob está disponible también carga wago-stock y remate de ahí
       const [mxR, usaR, chnR, bannerR, sourcingR, wagoR] = await Promise.all([
         fetchText(CATALOG_CONFIG.SHEET_MX),
         fetchText(CATALOG_CONFIG.SHEET_USA),
