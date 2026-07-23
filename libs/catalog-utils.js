@@ -13,6 +13,7 @@ export const CATALOG_CONFIG = {
   LOCAL_SOURCING: "/data/Sourcing Item Jun 26.csv",
   // cPanel URLs — archivos en public_html/catalog-data/
   CPANEL_BASE:    "https://eqkor.mx/catalog-data",
+  CPANEL_REMATE:  "https://eqkor.mx/catalog-data/REMATE%20STOCK%20BANNER%20VENTAS.xlsx",
   SHEET_MX:       "https://eqkor.mx/catalog-data/TFG%20-%20Inventario%20General%20(1).csv",
   SHEET_USA:      "https://eqkor.mx/catalog-data/MFG%20-%20Inventario%20General.csv",
   SHEET_CHN:      "https://eqkor.mx/catalog-data/NFG%20-%20Inventario%20General.csv",

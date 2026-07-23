@@ -21,6 +21,7 @@ $allowed = [
     'banner'      => ['banner_pricelist_download_20260505.txt'],
     'sourcing'    => ['Sourcing Item Jun 26.csv'],
     'wago-stock'  => ['wago-stock.json'],
+    'remate'      => ['REMATE STOCK BANNER VENTAS.xlsx'],
 ];
 
 $type = $_POST['type'] ?? '';

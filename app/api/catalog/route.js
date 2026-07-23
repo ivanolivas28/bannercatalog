@@ -74,15 +74,16 @@ export async function GET() {
       [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await cargarLocal().then(r => r);
     } else {
       // Leer desde cPanel primero; si Blob está disponible también carga wago-stock y remate de ahí
-      const [mxR, usaR, chnR, bannerR, sourcingR, wagoR] = await Promise.all([
+      const [mxR, usaR, chnR, bannerR, sourcingR, remateR, wagoR] = await Promise.all([
         fetchText(CATALOG_CONFIG.SHEET_MX),
         fetchText(CATALOG_CONFIG.SHEET_USA),
         fetchText(CATALOG_CONFIG.SHEET_CHN),
         fetchText(CATALOG_CONFIG.SHEET_BANNER),
         fetchText(CATALOG_CONFIG.SHEET_SOURCING),
+        fetchText(CATALOG_CONFIG.CPANEL_REMATE).catch(() => ""),
         fetchText(`${CATALOG_CONFIG.CPANEL_BASE}/wago-stock.json`).catch(() => ""),
       ]);
-      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = [mxR, usaR, chnR, bannerR, sourcingR];
+      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt, remateTxt] = [mxR, usaR, chnR, bannerR, sourcingR, remateR];
       if (wagoR) {
         try {
           const wagoJson = JSON.parse(wagoR);
