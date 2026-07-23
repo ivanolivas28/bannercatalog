@@ -90,7 +90,22 @@ export async function GET() {
         } catch (_) {}
       }
     } else {
-      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = await cargarRemoto().then(r => r);
+      // Vercel Blob no disponible — leer desde cPanel
+      const [mxR, usaR, chnR, bannerR, sourcingR, wagoR] = await Promise.all([
+        fetchText(CATALOG_CONFIG.SHEET_MX),
+        fetchText(CATALOG_CONFIG.SHEET_USA),
+        fetchText(CATALOG_CONFIG.SHEET_CHN),
+        fetchText(CATALOG_CONFIG.SHEET_BANNER),
+        fetchText(CATALOG_CONFIG.SHEET_SOURCING),
+        fetchText(`${CATALOG_CONFIG.CPANEL_BASE}/wago-stock.json`).catch(() => ""),
+      ]);
+      [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt] = [mxR, usaR, chnR, bannerR, sourcingR];
+      if (wagoR) {
+        try {
+          const wagoJson = JSON.parse(wagoR);
+          wagoStockMap = new Map(Object.entries(wagoJson).map(([pn, v]) => [pn.toUpperCase(), v]));
+        } catch (_) {}
+      }
     }
 
     const mx       = mxTxt       ? parsearSheet(mxTxt, "MX")        : [];

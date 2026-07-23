@@ -11,12 +11,13 @@ export const CATALOG_CONFIG = {
   LOCAL_CHN:      "/data/NFG - Inventario General.csv",
   LOCAL_BANNER:   "/data/banner_pricelist_download_20260505.txt",
   LOCAL_SOURCING: "/data/Sourcing Item Jun 26.csv",
-  // Google Sheets URLs for production
-  SHEET_MX:       "https://docs.google.com/spreadsheets/d/TU_ID_MX/export?format=csv&gid=0",
-  SHEET_USA:      "https://docs.google.com/spreadsheets/d/TU_ID_USA/export?format=csv&gid=0",
-  SHEET_CHN:      "https://docs.google.com/spreadsheets/d/TU_ID_CHN/export?format=csv&gid=0",
-  SHEET_BANNER:   "https://docs.google.com/spreadsheets/d/TU_ID_BANNER/export?format=csv&gid=0",
-  SHEET_SOURCING: "https://docs.google.com/spreadsheets/d/TU_ID_SOURCING/export?format=csv&gid=0",
+  // cPanel URLs — archivos en eqkor.mx/catalog-data/
+  CPANEL_BASE:    "https://eqkor.mx/catalog-data",
+  SHEET_MX:       "https://eqkor.mx/catalog-data/TFG%20-%20Inventario%20General%20(1).csv",
+  SHEET_USA:      "https://eqkor.mx/catalog-data/MFG%20-%20Inventario%20General.csv",
+  SHEET_CHN:      "https://eqkor.mx/catalog-data/NFG%20-%20Inventario%20General.csv",
+  SHEET_BANNER:   "https://eqkor.mx/catalog-data/banner_pricelist_download_20260505.txt",
+  SHEET_SOURCING: "https://eqkor.mx/catalog-data/Sourcing%20Item%20Jun%2026.csv",
 };
 
 const REGLAS_MARCA = [
