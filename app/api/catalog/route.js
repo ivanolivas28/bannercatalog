@@ -160,34 +160,8 @@ export async function GET() {
       };
     });
 
-    // Add remate-only products (not in main catalog), enriched with Banner pricelist data
-    for (const [pn, oferta] of remate.entries()) {
-      if (!pnsEnCatalogo.has(pn)) {
-        const b = bannerMap.get(pn) || {};
-        const bannerPrice = b.precioUSD || 0;
-        const precioListPrice = oferta.precioLista || bannerPrice;
-        productos.push({
-          pn,
-          desc: b.desc || oferta.desc || pn,
-          marca: "BANNER",
-          familia: b.familia || "",
-          categoria: b.categoria || "",
-          precioUSD: bannerPrice,
-          stockMX: oferta.cantidad || 0,
-          stockUSA: 0,
-          stockCHN: 0,
-          leadTimeBanner: b.leadTimeBanner || 0,
-          imagen: b.imagen || null,
-          urlProducto: b.urlProducto || null,
-          sourcingJun: null,
-          esRemate: true,
-          precioContado: oferta.precioRemate,
-          precioCredito: oferta.precioCredito || 0,
-          precioListPrice,
-          cantidadRemate: oferta.cantidad || 0,
-        });
-      }
-    }
+    // Remate-only products (not in stock CSVs) are intentionally excluded:
+    // a product must exist in the main catalog to appear in remate.
 
     // Add WAGO-only products (in wagopro but not in any stock CSV)
     for (const [pn, w] of wagoStockMap.entries()) {
