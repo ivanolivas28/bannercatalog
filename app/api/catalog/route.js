@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readFile, stat } from "fs/promises";
 import { join } from "path";
 import { list } from "@vercel/blob";
+import * as XLSX from "xlsx";
 import {
   parsearSheet,
   parsearBannerPricelist,
@@ -14,6 +15,15 @@ import {
 } from "@/libs/catalog-utils";
 
 export const dynamic = "force-dynamic";
+
+async function fetchXlsxAsCsv(url) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) return "";
+  const buf = await res.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array" });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_csv(ws);
+}
 
 async function cargarLocal() {
   const dir = join(process.cwd(), "public", "data");
@@ -80,7 +90,7 @@ export async function GET() {
         fetchText(CATALOG_CONFIG.SHEET_CHN),
         fetchText(CATALOG_CONFIG.SHEET_BANNER),
         fetchText(CATALOG_CONFIG.SHEET_SOURCING),
-        fetchText(CATALOG_CONFIG.CPANEL_REMATE).catch(() => ""),
+        fetchXlsxAsCsv(CATALOG_CONFIG.CPANEL_REMATE).catch(() => ""),
         fetchText(`${CATALOG_CONFIG.CPANEL_BASE}/wago-stock.json`).catch(() => ""),
       ]);
       [mxTxt, usaTxt, chnTxt, bannerTxt, sourcingTxt, remateTxt] = [mxR, usaR, chnR, bannerR, sourcingR, remateR];
