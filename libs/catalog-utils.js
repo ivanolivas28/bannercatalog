@@ -424,12 +424,15 @@ export function getEntregaInfo(p) {
   const esCHN = sourcing === "CHN to MTY";
   const origenChina = p.countryOfOrigin === "CN";
 
-  // STEP 3 — Route-dependent warehouse check (USA takes priority over CHN)
-  if (p.stockUSA > 0 && !origenChina) {
-    return { tipo: "usa", texto: "🇺🇸 En stock", tiempo: "Entrega 10–15 días hábiles" };
-  }
-  if (p.stockCHN > 0) {
-    return { tipo: "usa", texto: "🇨🇳 En stock", tiempo: "Entrega 10–15 días hábiles" };
+  // STEP 3 — Route-dependent warehouse check
+  if (esCHN) {
+    if (p.stockCHN > 0) {
+      return { tipo: "usa", texto: "🇨🇳 En stock", tiempo: "Entrega 10–15 días hábiles" };
+    }
+  } else if (!origenChina) {
+    if (p.stockUSA > 0) {
+      return { tipo: "usa", texto: "🇺🇸 En stock", tiempo: "Entrega 10–15 días hábiles" };
+    }
   }
 
   // STEP 4 — No usable stock, show manufacturing lead time
