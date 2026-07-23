@@ -345,7 +345,8 @@ export function parsearRemate(csv) {
     const cols = parsearCSV(linea);
     const pn = cols[idxPN]?.trim().toUpperCase();
     const precioRemate = parseP(cols[idxRemate]);
-    if (!pn || !precioRemate) return;
+    const cantidad = idxCantidad >= 0 ? parseInt(cols[idxCantidad]) || 0 : 1;
+    if (!pn || !precioRemate || cantidad <= 0) return;
     mapa.set(pn, {
       precioRemate,
       precioCredito: idxCredito >= 0 ? parseP(cols[idxCredito]) : 0,
