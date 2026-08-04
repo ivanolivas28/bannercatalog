@@ -17,7 +17,7 @@ export const CATALOG_CONFIG = {
   SHEET_MX:       "https://eqkor.mx/catalog-data/TFG%20-%20Inventario%20General%20(1).csv",
   SHEET_USA:      "https://eqkor.mx/catalog-data/MFG%20-%20Inventario%20General.csv",
   SHEET_CHN:      "https://eqkor.mx/catalog-data/NFG%20-%20Inventario%20General.csv",
-  SHEET_BANNER:   "https://eqkor.mx/catalog-data/banner_pricelist_download_20260505.txt",
+  SHEET_BANNER:   "https://eqkor.mx/catalog-data/banner_pricelist.txt",
   SHEET_SOURCING: "https://eqkor.mx/catalog-data/Sourcing%20Item%20Jun%2026.csv",
 };
 
