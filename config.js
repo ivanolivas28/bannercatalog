@@ -7,7 +7,7 @@ const config = {
   appDescription:
     "Distribuidor de componentes de automatización industrial en Chihuahua y México: Banner Engineering, Schneider Electric, Turck y Wago. Stock disponible. Cotización en menos de 2 horas.",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
-  domainName: "TU-DOMINIO.com",
+  domainName: "tienda.eqkor.mx",
   crisp: {
     // Crisp website ID. IF YOU DON'T USE CRISP: just remove this => Then add a support email in this config file (mailgun.supportEmail) otherwise customer support won't work.
     id: "",
