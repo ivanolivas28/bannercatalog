@@ -57,8 +57,10 @@ function parseWagoHTML(html, pn) {
     while ((td = tdRe.exec(tr[1])) !== null) {
       cells.push(td[1].replace(/<[^>]+>/g, "").replace(/&amp;/g,"&").replace(/&reg;/g,"®").replace(/&trade;/g,"™").replace(/&nbsp;/g," ").replace(/&#\d+;/g,"").trim());
     }
-    if (cells.length >= 5) rows.push(cells);
+    if (cells.length >= 6) rows.push(cells);
   }
+  // Columnas: [PN, Descripción, Precio lista, Precio OEM/neto, Pzas Mínimas, Stock]
+  // (verificado 2026-08-17 — row[4] es "Pzas Mínimas", no stock)
   const pnUp = pn.toUpperCase();
   for (const row of rows) {
     if (row[0]?.trim().toUpperCase() !== pnUp) continue;
@@ -69,7 +71,8 @@ function parseWagoHTML(html, pn) {
       desc: row[1]?.trim() || "",
       precioLista: parsePrice(row[2]),
       precioNeto: parsePrice(row[3]),
-      stock: parseStock(row[4]),
+      pzasMinimas: parseStock(row[4]),
+      stock: parseStock(row[5]),
     };
   }
   return { pn, desc: "", precioLista: null, precioNeto: null, stock: null };

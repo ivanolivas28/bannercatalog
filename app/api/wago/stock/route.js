@@ -26,20 +26,24 @@ function parseWagoHTML(html, pn) {
   }
 
   // Find the row matching our PN
-  // Expected columns: [PN, Descripción, Precio lista, Precio neto, Stock]
+  // Columnas reales de wagopro.com (verificado 2026-08-17 contra HTML
+  // crudo): [PN, Descripción, Precio lista, Precio OEM/neto, Pzas
+  // Mínimas, Stock] — 6 columnas, no 5. row[4] es "Pzas Mínimas", NO
+  // stock (bug anterior confundía ambos).
   const pnUp = pn.toUpperCase();
   for (const row of rows) {
     if (row[0]?.trim().toUpperCase() !== pnUp) continue;
     const parsePrice = (s) => parseFloat((s || "").replace(/[$,\s]/g, "")) || null;
     const parseStock = (s) => parseInt((s || "").replace(/[^\d]/g, "")) || 0;
 
-    if (row.length >= 5) {
+    if (row.length >= 6) {
       return {
         pn,
         desc: row[1]?.trim() || null,
         precioLista: parsePrice(row[2]),
         precio: parsePrice(row[3]),   // precio neto (tu precio de distribuidor)
-        stock: parseStock(row[4]),
+        pzasMinimas: parseStock(row[4]),
+        stock: parseStock(row[5]),
         rawRow: row,
       };
     }

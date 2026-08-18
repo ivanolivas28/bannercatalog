@@ -43,14 +43,16 @@ function parseWagoHTML(html, pn) {
     const tdRe = /<td[^>]*>([\s\S]*?)<\/td>/gi;
     let td;
     while ((td = tdRe.exec(tr[1])) !== null) cells.push(td[1].replace(/<[^>]+>/g,"").replace(/&amp;/g,"&").replace(/&reg;/g,"®").replace(/&trade;/g,"™").replace(/&nbsp;/g," ").replace(/&#\d+;/g,"").trim());
-    if (cells.length >= 5) rows.push(cells);
+    if (cells.length >= 6) rows.push(cells);
   }
+  // Columnas: [PN, Descripción, Precio lista, Precio OEM/neto, Pzas Mínimas, Stock]
+  // (verificado 2026-08-17 — row[4] es "Pzas Mínimas", no stock)
   const pnUp = pn.toUpperCase();
   for (const row of rows) {
     if (row[0]?.trim().toUpperCase() !== pnUp) continue;
     const p = (s) => parseFloat((s || "").replace(/[$,\s]/g, "")) || null;
     const s = (s) => parseInt((s || "").replace(/[^\d]/g, "")) || 0;
-    return { pn, desc: row[1]?.trim() || "", precioNeto: p(row[3]), stock: s(row[4]) };
+    return { pn, desc: row[1]?.trim() || "", precioNeto: p(row[3]), stock: s(row[5]) };
   }
   return { pn, desc: "", precioNeto: null, stock: null };
 }
