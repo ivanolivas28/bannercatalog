@@ -147,6 +147,22 @@ function CartItem({ item, session, onUpdateQty, onUpdateNota, onRemove }) {
         )}
       </div>
 
+      {/* Admin pricing details */}
+      {session?.user?.isAdmin && (item.netPrice > 0 || item.multiplier > 0) && (
+        <div className="flex gap-3 mt-2 px-1">
+          {item.netPrice > 0 && (
+            <span className="text-[10px] text-warning/80 font-mono">
+              Net: ${item.netPrice.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+            </span>
+          )}
+          {item.multiplier > 0 && (
+            <span className="text-[10px] text-warning/80 font-mono">
+              Mult: {item.multiplier.toFixed(4)}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Nota de partida */}
       <textarea
         rows={1}
@@ -846,6 +862,8 @@ export default function CatalogPage() {
           precioCredito: p.precioCredito || null,
           tiempoEntrega: getEntregaInfo(p).tiempo || "",
           imagen:        p.imagen || null,
+          netPrice:      p.netPrice   || 0,
+          multiplier:    p.multiplier || 0,
           stockMX:       p.stockMX    || 0,
           stockUSA:      p.stockUSA   || 0,
           stockCHN:      p.stockCHN   || 0,

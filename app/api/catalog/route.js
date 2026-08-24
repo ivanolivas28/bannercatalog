@@ -120,7 +120,7 @@ export async function GET() {
     // Return only fields the client uses (reduces JSON payload size)
     const productos = todos.map(({
       pn, desc, marca, familia, categoria,
-      precioUSD, stockMX, stockUSA, stockCHN,
+      precioUSD, netPrice, multiplier, stockMX, stockUSA, stockCHN,
       leadTimeBanner, imagen, urlProducto, sourcingJun,
     }) => {
       const oferta = remate.get(pn?.toUpperCase());
@@ -143,14 +143,14 @@ export async function GET() {
       } : {};
 
       if (!oferta) {
-        return { pn, desc, marca, familia, categoria, precioUSD, stockMX, stockUSA, stockCHN, leadTimeBanner, imagen, urlProducto, sourcingJun, ...wagoEnrich };
+        return { pn, desc, marca, familia, categoria, precioUSD, netPrice, multiplier, stockMX, stockUSA, stockCHN, leadTimeBanner, imagen, urlProducto, sourcingJun, ...wagoEnrich };
       }
       // precioListPrice (tachado): explicit lista column > Banner pricelist > merged precioUSD
       const bannerEntry = bannerMap.get(pn?.toUpperCase());
       const precioListPrice = oferta.precioLista || bannerEntry?.precioUSD || precioUSD;
       return {
         pn, desc, marca, familia, categoria,
-        precioUSD, stockMX, stockUSA, stockCHN,
+        precioUSD, netPrice, multiplier, stockMX, stockUSA, stockCHN,
         leadTimeBanner, imagen, urlProducto, sourcingJun,
         esRemate: true,
         precioContado: oferta.precioRemate,

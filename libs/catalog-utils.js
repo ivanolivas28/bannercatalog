@@ -225,6 +225,8 @@ export function parsearBannerPricelist(csv) {
   const idxPN     = enc.findIndex((h) => h.includes("model number"));
   const idxDesc   = enc.findIndex((h) => h === "description");
   const idxPrecio = enc.findIndex((h) => h.includes("list price"));
+  const idxNet    = enc.findIndex((h) => h.includes("net price"));
+  const idxMult   = enc.findIndex((h) => h.includes("multiplier"));
   const idxLead   = enc.findIndex((h) => h.includes("lead time"));
   const idxImg    = enc.findIndex((h) => h.includes("image url") && !h.includes("image 2"));
   const idxFam    = enc.findIndex((h) => h.includes("family name"));
@@ -242,6 +244,8 @@ export function parsearBannerPricelist(csv) {
     const leadTime       = idxLead >= 0   ? parseInt(cols[idxLead]) || 0       : 0;
     const desc           = idxDesc >= 0   ? cols[idxDesc]?.trim()               : "";
     const precio         = idxPrecio >= 0 ? parseFloat(cols[idxPrecio]) || 0   : 0;
+    const netPrice       = idxNet >= 0    ? parseFloat(cols[idxNet])  || 0      : 0;
+    const multiplier     = idxMult >= 0   ? parseFloat(cols[idxMult]) || 0      : 0;
     const imagen         = idxImg >= 0    ? cols[idxImg]?.trim()                : "";
     const familia        = idxFam >= 0    ? cols[idxFam]?.trim()                : "";
     const bu             = idxBU >= 0     ? cols[idxBU]?.trim()                 : "";
@@ -251,6 +255,7 @@ export function parsearBannerPricelist(csv) {
 
     return {
       pn, desc, leadTimeBanner: leadTime, precioUSD: precio,
+      netPrice, multiplier,
       imagen, businessUnit: bu, categoria, familia,
       cat: familia || categoriaDefault("BANNER"),
       marca: "BANNER", urlProducto, countryOfOrigin,
