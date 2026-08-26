@@ -17,7 +17,7 @@ import {
 export const dynamic = "force-dynamic";
 
 async function fetchXlsxAsCsv(url) {
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await fetch(`${url}?t=${Date.now()}`, { cache: "no-store", next: { revalidate: 0 } });
   if (!res.ok) return "";
   const buf = await res.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
@@ -70,8 +70,10 @@ export async function GET() {
     const tieneBlob = !!process.env.BLOB_READ_WRITE_TOKEN;
     const base = process.env.NEXTAUTH_URL || "https://tienda.eqkor.mx";
 
+    // Append timestamp to bust Vercel's Data Cache on outgoing fetches
+    const bust = `?t=${Date.now()}`;
     const fetchText = (url) =>
-      fetch(url, { cache: "no-store" }).then((r) => r.ok ? r.text() : "");
+      fetch(url + bust, { cache: "no-store", next: { revalidate: 0 } }).then((r) => r.ok ? r.text() : "");
 
     const blobUrl = (file) => `${base}/api/admin/blob-proxy?file=${file}`;
 
@@ -227,7 +229,9 @@ export async function GET() {
 
     return NextResponse.json({ productos, stockUpdatedAt }, {
       headers: {
-        "Cache-Control": "no-store",
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0",
       },
     });
   } catch (err) {
