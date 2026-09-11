@@ -13,8 +13,13 @@ async function uploadToCpanel(type, file) {
   fd.append("type", type);
   fd.append("file", file);
   const res = await fetch(CPANEL_UPLOAD_URL, { method: "POST", body: fd });
-  if (!res.ok) throw new Error(`cPanel HTTP ${res.status}`);
-  return res.json();
+  const text = await res.text();
+  if (!res.ok) throw new Error(`cPanel HTTP ${res.status}: ${text.substring(0, 120)}`);
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(`cPanel respuesta inválida: ${text.substring(0, 120)}`);
+  }
 }
 
 export async function POST(req) {
