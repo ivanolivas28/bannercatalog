@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/next-auth";
 
@@ -6,6 +7,19 @@ const ALLOWED_TYPES = ["mx", "usa", "chn", "banner", "sourcing", "remate"];
 const ALLOWED_EXTS  = [".xlsx", ".xls", ".csv", ".txt"];
 
 const CPANEL_UPLOAD_URL = "https://eqkor.mx/catalog-data/upload.php";
+
+// Permite subir por script (sin sesion de NextAuth) con
+// `Authorization: Bearer <ADMIN_UPLOAD_TOKEN>`. Si la variable no esta
+// configurada en el servidor, esta via queda deshabilitada.
+function hasValidUploadToken(req) {
+  const expected = process.env.ADMIN_UPLOAD_TOKEN;
+  if (!expected) return false;
+  const header = req.headers.get("authorization") || "";
+  if (!header.startsWith("Bearer ")) return false;
+  const given = Buffer.from(header.slice(7));
+  const wanted = Buffer.from(expected);
+  return given.length === wanted.length && timingSafeEqual(given, wanted);
+}
 
 async function uploadToCpanel(type, file) {
   const fd = new FormData();
@@ -24,7 +38,9 @@ async function uploadToCpanel(type, file) {
 
 export async function POST(req) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session && !hasValidUploadToken(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const formData = await req.formData();
   const file = formData.get("file");
